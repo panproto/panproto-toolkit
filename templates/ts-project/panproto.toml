@@ -1,0 +1,7 @@
+[project]
+name = "my-panproto-app"
+version = "0.1.0"
+protocol = "atproto"
+
+[schemas]
+path = "schemas/"

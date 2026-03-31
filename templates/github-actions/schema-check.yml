@@ -1,0 +1,39 @@
+# Validate panproto schemas on every push and PR.
+# Copy this file to .github/workflows/schema-check.yml in your project.
+# Customize the PROTOCOL and schema paths for your project.
+
+name: Schema Check
+on:
+  push:
+    paths: ['schemas/**']
+  pull_request:
+    paths: ['schemas/**']
+
+env:
+  PROTOCOL: atproto  # Change to your protocol
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install panproto CLI
+        run: |
+          curl --proto '=https' -LsSf \
+            https://github.com/panproto/panproto/releases/latest/download/panproto-cli-installer.sh | sh
+
+      - name: Validate schemas
+        run: |
+          exit_code=0
+          for file in schemas/*.json; do
+            echo "::group::Validating $file"
+            if schema validate --protocol "$PROTOCOL" "$file"; then
+              echo "Valid"
+            else
+              echo "::error file=$file::Schema validation failed"
+              exit_code=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $exit_code

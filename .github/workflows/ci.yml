@@ -1,0 +1,73 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-skills:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check SKILL.md frontmatter
+        run: |
+          errors=0
+          for file in skills/*/SKILL.md agents/*/SKILL.md ci-integrations/*/SKILL.md; do
+            if ! head -1 "$file" | grep -q "^---$"; then
+              echo "::error file=$file::Missing YAML frontmatter"
+              errors=$((errors + 1))
+            fi
+            if ! grep -q "^name:" "$file"; then
+              echo "::error file=$file::Missing 'name' in frontmatter"
+              errors=$((errors + 1))
+            fi
+            if ! grep -q "^description:" "$file"; then
+              echo "::error file=$file::Missing 'description' in frontmatter"
+              errors=$((errors + 1))
+            fi
+          done
+          if [ $errors -gt 0 ]; then
+            echo "$errors frontmatter errors found"
+            exit 1
+          fi
+          echo "All SKILL.md files have valid frontmatter"
+
+  typecheck-mcp:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp-server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install
+      - run: npm run typecheck
+
+  publish-mcp:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [lint-skills, typecheck-mcp]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    defaults:
+      run:
+        working-directory: mcp-server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - run: npm install
+      - run: npm run build
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,0 +1,11 @@
+[project]
+name = "my-panproto-app"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "panproto>=0.22.1",
+]
+
+[tool.panproto]
+protocol = "atproto"
+schemas_path = "schemas/"

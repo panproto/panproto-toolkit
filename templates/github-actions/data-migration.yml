@@ -1,0 +1,46 @@
+# Dry-run data migration on schema changes to catch migration failures early.
+# Copy this file to .github/workflows/data-migration.yml in your project.
+
+name: Data Migration Check
+on:
+  pull_request:
+    paths: ['schemas/**']
+
+jobs:
+  migration-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install panproto CLI
+        run: |
+          curl --proto '=https' -LsSf \
+            https://github.com/panproto/panproto/releases/latest/download/panproto-cli-installer.sh | sh
+
+      - name: Check migration feasibility
+        run: |
+          for file in $(git diff --name-only origin/${{ github.base_ref }}...HEAD -- schemas/); do
+            if git show origin/${{ github.base_ref }}:"$file" > /tmp/base.json 2>/dev/null; then
+              echo "::group::Migration check for $file"
+
+              # Try auto-generating a lens
+              if schema lens generate /tmp/base.json "$file" > /dev/null 2>&1; then
+                echo "Auto-generation succeeded for $file"
+              else
+                echo "::warning file=$file::Auto-generation failed. Manual migration may be needed."
+              fi
+
+              echo "::endgroup::"
+            fi
+          done
+
+      - name: Dry-run data migration
+        if: hashFiles('data/') != ''
+        run: |
+          schema data migrate --dry-run data/ 2>&1 | tee migration-report.txt
+          if grep -q "ERROR" migration-report.txt; then
+            echo "::error::Data migration dry-run failed. See output above."
+            exit 1
+          fi

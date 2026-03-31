@@ -1,0 +1,66 @@
+# Block PRs with breaking schema changes unless explicitly acknowledged.
+# Copy this file to .github/workflows/breaking-change-gate.yml in your project.
+# Add a "breaking-change-acknowledged" label to your repo for overrides.
+
+name: Breaking Change Gate
+on:
+  pull_request:
+    paths: ['schemas/**']
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install panproto CLI
+        run: |
+          curl --proto '=https' -LsSf \
+            https://github.com/panproto/panproto/releases/latest/download/panproto-cli-installer.sh | sh
+
+      - name: Check for breaking changes
+        id: check
+        run: |
+          breaking=false
+          {
+            echo "## Schema Compatibility Report"
+            echo ""
+          } >> report.md
+
+          for file in $(git diff --name-only origin/${{ github.base_ref }}...HEAD -- schemas/); do
+            if git show origin/${{ github.base_ref }}:"$file" > /tmp/base.json 2>/dev/null; then
+              result=$(schema check --src /tmp/base.json --tgt "$file" 2>&1 || true)
+              echo "### $file" >> report.md
+              echo '```' >> report.md
+              echo "$result" >> report.md
+              echo '```' >> report.md
+              echo "" >> report.md
+              if echo "$result" | grep -q "breaking"; then
+                breaking=true
+              fi
+            else
+              echo "### $file (new)" >> report.md
+              echo "New schema file." >> report.md
+              echo "" >> report.md
+            fi
+          done
+
+          cat report.md >> $GITHUB_STEP_SUMMARY
+          echo "breaking=$breaking" >> $GITHUB_OUTPUT
+
+      - name: Gate decision
+        if: steps.check.outputs.breaking == 'true'
+        run: |
+          labels='${{ toJSON(github.event.pull_request.labels.*.name) }}'
+          if echo "$labels" | grep -q 'breaking-change-acknowledged'; then
+            echo "Breaking change acknowledged via label."
+          else
+            echo "::error::Breaking schema changes detected. Add the 'breaking-change-acknowledged' label to merge."
+            exit 1
+          fi

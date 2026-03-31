@@ -1,0 +1,9 @@
+[package]
+name = "my-panproto-app"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+panproto-core = "0.22.1"
+# Optional features:
+# panproto-core = { version = "0.22.1", features = ["full-parse", "git"] }

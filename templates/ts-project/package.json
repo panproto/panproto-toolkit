@@ -1,0 +1,19 @@
+{
+  "name": "my-panproto-app",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "tsc",
+    "schema:validate": "schema validate --protocol atproto schemas/",
+    "schema:check": "schema diff --src schemas/v1.json --tgt schemas/v2.json"
+  },
+  "dependencies": {
+    "@panproto/core": "^0.22.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "tsx": "^4.19.0",
+    "@types/node": "^22.0.0"
+  }
+}
