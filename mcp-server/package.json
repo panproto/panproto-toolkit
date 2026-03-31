@@ -27,6 +27,11 @@
     "tsx": "^4.19.0",
     "@types/node": "^22.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/panproto/panproto-toolkit",
+    "directory": "mcp-server"
+  },
   "engines": {
     "node": ">=22"
   }
