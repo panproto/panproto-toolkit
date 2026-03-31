@@ -1,19 +1,26 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { execCli } from "../cli.js";
+import { execCli, textContent, withErrorBoundary } from "../cli.js";
 
 export function registerDiffTools(server: McpServer): void {
   server.tool(
     "panproto_diff",
-    "Compute structural diff between two schemas",
+    "Compute structural diff between two schemas, showing added/removed/modified elements",
     {
       src: z.string().describe("Path to source schema"),
       tgt: z.string().describe("Path to target schema"),
+      stat: z.boolean().optional().describe("Show diffstat summary"),
+      detect_renames: z.boolean().optional().describe("Detect likely renames"),
+      theory: z.boolean().optional().describe("Show theory-level diff (sorts, operations)"),
     },
-    async ({ src, tgt }) => {
-      const result = await execCli("diff", "--src", src, "--tgt", tgt);
-      return { content: [{ type: "text" as const, text: result }] };
-    }
+    withErrorBoundary(async ({ src, tgt, stat, detect_renames, theory }) => {
+      const args = ["diff", src, tgt];
+      if (stat) args.push("--stat");
+      if (detect_renames) args.push("--detect-renames");
+      if (theory) args.push("--theory");
+      const result = await execCli(...args);
+      return textContent(result);
+    })
   );
 
   server.tool(
@@ -22,16 +29,11 @@ export function registerDiffTools(server: McpServer): void {
     {
       src: z.string().describe("Path to source schema"),
       tgt: z.string().describe("Path to target schema"),
-      protocol: z
-        .string()
-        .optional()
-        .describe("Protocol name (for protocol-aware classification)"),
+      mapping: z.string().describe("Path to migration mapping file"),
     },
-    async ({ src, tgt, protocol }) => {
-      const args = ["check", "--src", src, "--tgt", tgt];
-      if (protocol) args.push("--protocol", protocol);
-      const result = await execCli(...args);
-      return { content: [{ type: "text" as const, text: result }] };
-    }
+    withErrorBoundary(async ({ src, tgt, mapping }) => {
+      const result = await execCli("check", "--src", src, "--tgt", tgt, "--mapping", mapping);
+      return textContent(result);
+    })
   );
 }

@@ -1,5 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { execCli } from "../cli.js";
+import { CODEC_CATALOG } from "./codecs.js";
+import { GRAMMAR_CATALOG } from "./grammars.js";
 
 export function registerResources(server: McpServer): void {
   server.resource(
@@ -30,6 +32,26 @@ export function registerResources(server: McpServer): void {
       }
     }
   );
+
+  server.resource("codecs", "panproto://codecs", async () => ({
+    contents: [
+      {
+        uri: "panproto://codecs",
+        mimeType: "text/plain",
+        text: CODEC_CATALOG,
+      },
+    ],
+  }));
+
+  server.resource("grammars", "panproto://grammars", async () => ({
+    contents: [
+      {
+        uri: "panproto://grammars",
+        mimeType: "text/plain",
+        text: GRAMMAR_CATALOG,
+      },
+    ],
+  }));
 }
 
 const PROTOCOL_LIST = `panproto supports 50 semantic protocol definitions:

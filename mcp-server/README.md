@@ -40,28 +40,75 @@ Add to `.vscode/settings.json`:
 }
 ```
 
-## Tools (18)
+## Tools (30)
 
+### Schema
 | Tool | Description |
 |------|-------------|
 | `panproto_validate` | Validate a schema against a protocol |
 | `panproto_normalize` | Canonicalize a schema |
-| `panproto_scaffold` | Generate a skeleton schema |
-| `panproto_check_existence` | Check migration validity |
-| `panproto_compile` | Compile a migration |
-| `panproto_lift` | Apply migration to a record |
-| `panproto_diff` | Structural diff between schemas |
-| `panproto_classify` | Classify schema change compatibility |
-| `panproto_lens_generate` | Auto-generate a lens |
-| `panproto_lens_apply` | Apply a lens to data |
-| `panproto_lens_verify` | Verify lens round-trip laws |
-| `panproto_convert` | Convert data between protocols |
-| `panproto_convert_schema` | Translate a schema between protocols |
+| `panproto_scaffold` | Generate test data from protocol theory |
+| `panproto_typecheck` | Type-check a migration at the GAT level |
+| `panproto_health` | Check CLI installation and version |
+
+### Migration
+| Tool | Description |
+|------|-------------|
+| `panproto_check_existence` | Check migration existence conditions |
+| `panproto_lift` | Apply migration to a data record |
+| `panproto_auto_migrate` | Discover a migration via CSP search |
+| `panproto_integrate` | Compute pushout of two schemas |
+
+### Diff
+| Tool | Description |
+|------|-------------|
+| `panproto_diff` | Structural diff with rename detection |
+| `panproto_classify` | Classify change compatibility |
+
+### Lens
+| Tool | Description |
+|------|-------------|
+| `panproto_lens_generate` | Auto-generate a protolens chain |
+| `panproto_lens_apply` | Apply lens (forward or backward) |
+| `panproto_lens_verify` | Verify round-trip laws |
+| `panproto_lens_compose` | Compose two chains |
+| `panproto_lens_inspect` | Inspect chain steps and effects |
+
+### Data
+| Tool | Description |
+|------|-------------|
+| `panproto_convert` | Convert data between schemas |
+| `panproto_batch_migrate` | Migrate a directory via VCS history |
+| `panproto_data_status` | Report data staleness |
+
+### Parse
+| Tool | Description |
+|------|-------------|
 | `panproto_parse_file` | Parse source file (248 languages) |
+| `panproto_parse_project` | Parse directory into project schema |
 | `panproto_parse_emit` | Round-trip parse and emit |
+
+### Expression
+| Tool | Description |
+|------|-------------|
 | `panproto_eval_expr` | Evaluate an expression |
+| `panproto_parse_expr` | Parse expression to AST |
+| `panproto_fmt_expr` | Pretty-print expression |
+
+### VCS
+| Tool | Description |
+|------|-------------|
 | `panproto_vcs_status` | Show VCS status |
 | `panproto_vcs_log` | Show commit history |
+| `panproto_vcs_diff` | Diff schema versions |
+| `panproto_vcs_blame` | Attribute elements to commits |
+
+### Enrichment
+| Tool | Description |
+|------|-------------|
+| `panproto_enrich_add_default` | Add default value to a vertex |
+| `panproto_enrich_add_coercion` | Add type coercion expression |
+| `panproto_enrich_list` | List all enrichments |
 
 ## Resources (3)
 
