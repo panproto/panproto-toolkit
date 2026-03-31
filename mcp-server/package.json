@@ -1,6 +1,6 @@
 {
   "name": "@panproto/mcp-server",
-  "version": "0.22.1",
+  "version": "0.2.0",
   "description": "MCP server exposing panproto schema migration operations",
   "license": "MIT",
   "type": "module",
