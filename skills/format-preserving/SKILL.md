@@ -1,3 +1,11 @@
+---
+name: format-preserving
+description: >
+  Format-preserving parsing via UnifiedCodec and CstComplement. Uses tree-sitter grammars
+  for lossless round-trips: emit(parse(bytes)) == bytes for JSON, XML, YAML, TOML, CSV, TSV.
+  Covers the tree-sitter feature flag, CST extraction lens, and VCS integration.
+---
+
 # Format-Preserving Parsing
 
 panproto 0.24.0 introduces unified tree-sitter-based parsing that preserves all formatting through round-trips. Enable via the `tree-sitter` feature flag on `panproto-io` (or `panproto-core`).

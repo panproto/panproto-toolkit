@@ -1,3 +1,11 @@
+---
+name: dependent-optics
+description: >
+  Dependent optics and scoped transforms: apply protolens combinators within sub-schemas
+  with optic kind determined by edge type (prop→Lens, item→Traversal, variant→Prism).
+  Covers ScopedTransform, RenameEdgeName, mapItems, and field-level combinators.
+---
+
 # Dependent Optics and Scoped Transforms
 
 Dependent optics extend protolenses with context-sensitive behavior: the optic kind (Lens, Traversal, Prism) depends on the edge connecting the focus vertex to its parent in the Grothendieck fibration.
