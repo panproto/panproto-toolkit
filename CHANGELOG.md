@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.3.0] - 2026-04-01
+
+Updated for panproto v0.24.0 (unified tree-sitter parsing, dependent optics).
+
+### Added
+- **skills/dependent-optics**: new skill for dependent optics, scoped transforms, and combinators (0.23.0+)
+- **skills/format-preserving**: new skill for format-preserving parsing via UnifiedCodec and CstComplement (0.24.0+)
+- **MCP server**: `panproto_lens_pipeline` tool for building combinator pipelines with scoped transforms
+- **MCP server**: `panproto_parse_preserving` tool for format-preserving parsing with CST complement
+- **MCP server**: `panproto_emit_preserving` tool for format-preserving emission from CST complement
+
+### Changed
+- All version references updated to panproto 0.24.0
+- MCP server version bumped to 0.3.0
+- `@panproto/core` dependency updated to `^0.24.0`
+- Rust template updated with `tree-sitter` feature option
+- **agents/data-converter**: now recommends format-preserving conversion when available
+- **agents/migration-advisor**: now recommends dependent optics for array element transforms and `RenameEdgeName` for property key renames
+- **resources/codecs**: documents UnifiedCodec and legacy codec deprecation
+
+## [0.2.0] - 2026-03-31
+
+Updated for panproto v0.23.0 (dependent optics, lens combinators, WASM/TS/Python pipeline APIs).
+
 ## [0.1.0] - 2026-03-31
 
 Initial release of panproto-toolkit, written for panproto v0.22.1.

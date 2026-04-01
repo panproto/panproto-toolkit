@@ -97,3 +97,20 @@ Numbered steps with exact CLI commands and SDK code (TypeScript, Python, Rust).
 ### Verification
 - Lens law verification command
 - Sample test data recommendations
+
+### Dependent optics (0.23.0+)
+
+When the migration involves array element transforms, recommend `ScopedTransform`
+with `mapItems` combinator. Explain that the optic kind depends on the edge kind:
+- `prop` edge: Lens (apply transform once to single child)
+- `item` edge: Traversal (apply transform to every array element)
+- `variant` edge: Prism (apply transform only if variant is present)
+
+For JSON property key renames, recommend `RenameEdgeName` (classified as `Iso`,
+no complement needed).
+
+### Format preservation (0.24.0+)
+
+Recommend format-preserving conversion when the user cares about maintaining the
+original file formatting. Mention the `tree-sitter` feature flag and the
+`UnifiedCodec` / `CstComplement` pipeline.

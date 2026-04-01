@@ -92,4 +92,22 @@ export function registerLensTools(server: McpServer): void {
       return textContent(result);
     })
   );
+
+  server.tool(
+    "panproto_lens_pipeline",
+    "Build a protolens chain from combinator steps (rename_field, remove_field, add_field, scoped/map_items, hoist_field, nest_field). Supports dependent optics: scoped transforms apply inner transforms to sub-schemas with optic kind determined by edge type (prop→Lens, item→Traversal, variant→Prism).",
+    {
+      steps: z.string().describe("JSON array of pipeline steps, e.g. [{\"type\":\"rename_field\",\"old\":\"name\",\"new\":\"displayName\"},{\"type\":\"map_items\",\"focus\":\"words\",\"inner\":[{\"type\":\"add_field\",\"name\":\"confidence\",\"kind\":\"number\",\"default\":1.0}]}]"),
+      protocol: z.string().describe("Protocol name"),
+      schema: z.string().optional().describe("Path to schema for instantiation"),
+      save: z.string().optional().describe("Save pipeline chain to this file path"),
+    },
+    withErrorBoundary(async ({ steps, protocol, schema, save }) => {
+      const args = ["lens", "pipeline", "--protocol", protocol, "--steps", steps];
+      if (schema) args.push("--schema", schema);
+      if (save) args.push("--save", save);
+      const result = await execCli(...args);
+      return textContent(result);
+    })
+  );
 }

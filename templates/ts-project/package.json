@@ -9,7 +9,7 @@
     "schema:check": "schema diff --src schemas/v1.json --tgt schemas/v2.json"
   },
   "dependencies": {
-    "@panproto/core": "^0.22.1"
+    "@panproto/core": "^0.24.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

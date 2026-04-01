@@ -100,3 +100,22 @@ Whether the output passes target schema validation.
 
 ### Commands used
 Exact CLI commands for reproducibility.
+
+## Format-preserving conversion (0.24.0+)
+
+When the `tree-sitter` feature is available, prefer format-preserving conversion.
+This preserves the original file formatting (whitespace, key ordering, indentation,
+comments) through the conversion pipeline.
+
+```bash
+# Format-preserving parse (captures CST complement)
+schema data parse --protocol <proto> --format-preserving --save-complement complement.bin <data_file>
+
+# Apply migration...
+
+# Format-preserving emit (restores original formatting)
+schema data emit --protocol <proto> --complement complement.bin <instance_file>
+```
+
+When reporting fidelity, note whether formatting was preserved or canonicalized.
+Format-preserving conversion achieves byte-identical output for unmodified data.

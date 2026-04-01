@@ -29,4 +29,11 @@ Config:
 Domain:
   vcard, ical, edi-x12, swift-mt, conll-u, brat, ontonotes
 
-Each codec implements InstanceParser (bytes to Instance) and InstanceEmitter (Instance to bytes).`;
+Each codec implements InstanceParser (bytes to Instance) and InstanceEmitter (Instance to bytes).
+
+UNIFIED CODEC (0.24.0+, tree-sitter feature):
+  All codecs above can be replaced by UnifiedCodec, which uses tree-sitter
+  grammars for format-preserving round-trips. Enable via the tree-sitter
+  feature flag on panproto-io. The legacy pathway-specific codecs (JsonCodec,
+  XmlCodec, TabularCodec) are deprecated; UnifiedCodec preserves whitespace,
+  key ordering, indentation, comments, and all formatting through parse/emit.`;
