@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.0] - 2026-04-01
+
+Updated for panproto v0.25.0 (declarative lens DSL with Nickel composition).
+
+### Added
+- **skills/lens-dsl**: new skill for writing declarative lens specifications in Nickel, JSON, or YAML using the `panproto-lens-dsl` crate (0.25.0+)
+
+### Changed
+- All version references updated to panproto 0.25.0
+- MCP server version bumped to 0.4.0
+- `@panproto/core` dependency updated to `^0.25.0`
+- **skills/use-lenses**: added section on declarative lens files with Nickel example
+- **skills/protolenses**: added section on declarative protolens specifications
+- **agents/migration-advisor**: now recommends declarative lens files for version-controlled combinator chains
+
 ## [0.3.0] - 2026-04-01
 
 Updated for panproto v0.24.0 (unified tree-sitter parsing, dependent optics).

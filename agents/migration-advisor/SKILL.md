@@ -114,3 +114,15 @@ no complement needed).
 Recommend format-preserving conversion when the user cares about maintaining the
 original file formatting. Mention the `tree-sitter` feature flag and the
 `UnifiedCodec` / `CstComplement` pipeline.
+
+### Declarative lens specifications (0.25.0+)
+
+When the migration plan involves a combinator chain, recommend authoring it as a
+declarative lens file using `panproto-lens-dsl`. This is preferred when:
+- The lens should be version-controlled alongside schemas
+- Multiple lenses share common fragments (use Nickel record merge)
+- The lens needs to be reviewed in a PR by non-programmers
+- The same transform pattern applies across many schemas (use Nickel templates)
+
+Suggest Nickel for complex lenses (composition, templates) and JSON/YAML for simple ones.
+Reference the `L.remove`, `L.rename`, `L.add`, `L.map_items` combinator functions.

@@ -192,8 +192,29 @@ const lens = p.lensFromCombinators([
 ]);
 ```
 
+## Declarative lens files (v0.25.0+)
+
+For lenses that should be **loadable data** (version-controlled, reviewed in PRs, composed from reusable fragments), use the declarative DSL (`panproto-lens-dsl`). Write lens specs in Nickel, JSON, or YAML:
+
+```nickel
+let L = import "panproto/lens.ncl" in
+{
+  id = "my.lens.v1",
+  source = "my.source",
+  target = "my.target",
+  steps = [
+    L.remove "legacyId",
+    L.rename "name" "displayName",
+    L.add "bio" "string" "",
+  ],
+} | L.Lens
+```
+
+See `/lens-dsl` for the full DSL reference.
+
 ## Further Reading
 
 - [Tutorial Ch. 6: Bidirectional Migration with Lenses](https://panproto.dev/tutorial/chapters/06-bidirectional-migration-with-lenses.html)
 - [Tutorial Ch. 16: Protolenses](https://panproto.dev/tutorial/chapters/16-protolenses.html)
 - [Tutorial Ch. 17: Automatic Lens Generation](https://panproto.dev/tutorial/chapters/17-automatic-lens-generation.html)
+- [Tutorial Ch. 18c: Declarative Lens Specifications](https://panproto.dev/tutorial/chapters/18c-declarative-lens-specifications.html)

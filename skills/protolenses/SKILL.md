@@ -128,6 +128,30 @@ schema lens lift chain.json morphism.json
 
 This uses the theory morphism to translate preconditions and effects between protocols.
 
+## Declarative protolens specifications (v0.25.0+)
+
+Protolens chains can be authored as declarative files in Nickel, JSON, or YAML using the `panproto-lens-dsl` crate. This is preferred when lenses should be loadable data rather than compiled code:
+
+```nickel
+let L = import "panproto/lens.ncl" in
+{
+  id = "my.protolens.chain.v1",
+  source = "my.source",
+  target = "my.target",
+  steps = [
+    L.remove "legacyId",
+    L.rename "name" "displayName",
+    L.add "bio" "string" "",
+    L.map_items "items" [
+      L.rename "val" "value",
+      L.apply "value" "upper value",
+    ],
+  ],
+} | L.Lens
+```
+
+Nickel provides typed contracts for validation, record merge for fragment composition, functions for parameterized templates, and imports for modularity. See `/lens-dsl` for the full reference.
+
 ## Symmetric lenses
 
 A symmetric lens pairs two protolens chains for full bidirectional sync:
