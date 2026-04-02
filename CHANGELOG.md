@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.5.0] - 2026-04-02
+
+Updated for panproto v0.26.0 (hint-guided auto-lens generation).
+
+### Added
+- **skills/use-lenses**: new "Hint-guided generation" section with `HintSpec` format, CLI `--hints` flag, and SDK examples
+- **skills/lens-dsl**: new "HintSpec for guided auto-generation" section with JSON/Nickel examples, constraint types, and anchor propagation docs
+- **MCP server**: `panproto_lens_generate` tool now supports `hints` parameter for guided auto-lens generation
+
+### Changed
+- All version references updated to panproto 0.26.0
+- MCP server version bumped to 0.5.0
+- `@panproto/core` dependency updated to `^0.26.0`
+- **skills/sdk-rust**: added `auto_generate_with_hints()`, `HintParts`, `resolve_hints()`, `DomainConstraints`, `find_morphisms_constrained()`, `find_best_morphism_constrained()`
+- **skills/sdk-python**: added `ProtolensChain.auto_generate_with_hints()` and `auto_generate_with_hint_spec()`
+- **skills/sdk-typescript**: added hint-guided `protolensChainWithHints()` example
+- **skills/protolenses**: added `--hints` CLI flag to automatic generation section
+- **skills/build-migration**: replaced `--hint` string flag with `--hints <path>` JSON file approach
+
 ## [0.4.1] - 2026-04-02
 
 Fix Rust API inaccuracies across skill files and update crate count.

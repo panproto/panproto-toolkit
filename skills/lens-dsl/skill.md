@@ -174,3 +174,65 @@ extensions:
 ```
 
 The DSL compiler passes extensions through unchanged; downstream consumers extract what they need.
+
+## HintSpec for guided auto-generation (0.26.0+)
+
+When using the `auto` body variant, you can provide a `HintSpec` to guide morphism search:
+
+### JSON
+```json
+{
+  "id": "my.auto.lens.v1",
+  "source": "my.source",
+  "target": "my.target",
+  "auto": {
+    "quality_threshold": 0.5,
+    "hints": {
+      "anchors": { "post": "article", "post:body": "article:content" },
+      "constraints": [
+        { "type": "scope", "under": "post:body", "targets": "article:content" },
+        { "type": "exclude_targets", "vertices": ["article:legacy"] },
+        { "type": "exclude_sources", "vertices": ["post:deprecated"] },
+        { "type": "prefer", "predicate": { "kind": "similar_name", "threshold": 0.6 }, "weight": 2.0 },
+        { "type": "prefer", "predicate": { "kind": "same_edge_name" }, "weight": 1.5 },
+        { "type": "prefer", "predicate": { "kind": "same_kind" }, "weight": 1.0 }
+      ]
+    }
+  }
+}
+```
+
+### Nickel
+```nickel
+let L = import "panproto/lens.ncl" in
+{
+  id = "my.auto.lens.v1",
+  source = "my.source",
+  target = "my.target",
+  auto = {
+    quality_threshold = 0.5,
+    hints = {
+      anchors = { post = "article", "post:body" = "article:content" },
+      constraints = [
+        L.scope "post:body" "article:content",
+        L.exclude_targets ["article:legacy"],
+        L.prefer_similar_name 0.6 2.0,
+        L.prefer_same_edge_name 1.5,
+      ],
+    },
+  },
+} | L.Lens
+```
+
+### Constraint types
+
+| Type | Fields | Effect |
+|------|--------|--------|
+| `scope` | `under`, `targets` | Restrict search to vertices reachable from this parent pair |
+| `exclude_targets` | `vertices` | Remove target vertices from morphism candidates |
+| `exclude_sources` | `vertices` | Remove source vertices from morphism candidates |
+| `prefer` | `predicate`, `weight` | Adjust scoring: `same_edge_name`, `similar_name { threshold }`, `same_kind` |
+
+### Anchor propagation
+
+Declared anchors are expanded by forward-chaining constraint propagation: if `(a, b)` is an anchor and both `a` and `b` have a unique outgoing edge with the same name leading to children with the same vertex kind, the children are added as derived anchors. This repeats to fixpoint.

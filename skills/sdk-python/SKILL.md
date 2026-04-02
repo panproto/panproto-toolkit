@@ -101,6 +101,26 @@ result = compiled.lift(record)
 lens, quality = panproto.auto_generate_lens(old_schema, new_schema, proto)
 print(quality)  # "isomorphism", "injection", "projection", "affine", or "general"
 
+# Hint-guided auto-generation (0.26.0+)
+chain = panproto.ProtolensChain.auto_generate_with_hints(
+    old_schema, new_schema, proto,
+    hints={"post": "article", "post:body": "article:content"}
+)
+
+# Or with a full HintSpec (JSON-encoded)
+import json
+hint_spec = json.dumps({
+    "anchors": {"post": "article"},
+    "constraints": [
+        {"type": "scope", "under": "post:body", "targets": "article:content"},
+        {"type": "exclude_targets", "vertices": ["article:legacy"]},
+        {"type": "prefer", "predicate": {"kind": "similar_name", "threshold": 0.6}, "weight": 2.0}
+    ]
+})
+chain = panproto.ProtolensChain.auto_generate_with_hint_spec(
+    old_schema, new_schema, proto, hint_spec
+)
+
 # Get (forward projection)
 view, complement = lens.get(instance)
 

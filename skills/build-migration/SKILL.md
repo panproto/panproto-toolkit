@@ -51,12 +51,25 @@ let result = panproto_lens::auto_generate(&old_schema, &new_schema, &protocol, &
 
 Auto-generation works well for: field renames, field additions with defaults, field removals, type coercions, and simple structural rearrangements.
 
-### B. Semi-automatic (for changes needing guidance)
+### B. Hint-guided (for changes needing guidance) (0.26.0+)
 
-Use auto-generation as a starting point, then provide hints for ambiguous cases:
+Use auto-generation with a `HintSpec` JSON file to guide ambiguous cases:
 ```bash
-schema lens generate old.json new.json --protocol atproto --hint "old_field_name=new_field_name"
+schema lens generate old.json new.json --protocol atproto --hints hints.json
 ```
+
+The hints file declares vertex anchors (known correspondences), scope constraints, exclusions, and scoring preferences:
+```json
+{
+  "anchors": { "old_field": "new_field" },
+  "constraints": [
+    { "type": "scope", "under": "old_parent", "targets": "new_parent" },
+    { "type": "prefer", "predicate": { "kind": "similar_name", "threshold": 0.6 }, "weight": 2.0 }
+  ]
+}
+```
+
+Forward-chaining constraint propagation derives additional anchors from the declared ones, then the CSP solver runs with the restricted domains.
 
 ### C. Manual morphism (for complex transformations)
 

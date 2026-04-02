@@ -26,6 +26,10 @@ You are helping a user work with protolenses, the Level 4 abstraction in panprot
 ```bash
 schema lens generate old.json new.json
 # Produces a protolens chain, not just a single lens
+
+# Hint-guided generation (0.26.0+)
+schema lens generate old.json new.json --hints hints.json
+# Seeds the morphism search with vertex anchors and constraints
 ```
 
 **TypeScript:**

@@ -15,7 +15,7 @@ You are helping a user work with panproto as a Rust library via the `panproto-co
 Add to your `Cargo.toml`:
 ```toml
 [dependencies]
-panproto-core = "0.25"
+panproto-core = "0.26"
 ```
 
 ### Feature flags
@@ -38,10 +38,10 @@ panproto-core = { version = "0.25", features = ["full-parse", "git"] }
 
 Or depend on individual crates for finer control:
 ```toml
-panproto-gat = "0.25"
-panproto-schema = "0.25"
-panproto-mig = "0.25"
-panproto-lens = "0.25"
+panproto-gat = "0.26"
+panproto-schema = "0.26"
+panproto-mig = "0.26"
+panproto-lens = "0.26"
 ```
 
 ## Quick start
@@ -150,6 +150,16 @@ let composed = compose(&mig_ab, &mig_bc)?;
 
 // Auto-discover morphisms via CSP
 let morphisms = find_morphisms(&schema_a, &schema_b, &search_opts);
+
+// Constrained morphism search (0.26.0+)
+let constraints = DomainConstraints {
+    restricted_domains: HashMap::new(),
+    excluded_targets: HashSet::new(),
+    excluded_sources: HashSet::new(),
+    scoring_weights: Some([1.0, 0.5, 0.3, 0.2]),
+    name_similarity_threshold: Some(0.6),
+};
+let best = find_best_morphism_constrained(&schema_a, &schema_b, &search_opts, &constraints);
 ```
 
 ### panproto_lens (lenses and protolenses)
@@ -173,6 +183,23 @@ let composed = compose(&lens_ab, &lens_bc)?;
 
 // Verify round-trip laws (returns Result<(), LawViolation>)
 check_laws(&lens, &test_instance)?;
+
+// Hint-guided auto-generation (0.26.0+)
+use panproto_lens::hint::{HintParts, resolve_hints};
+
+let parts = HintParts {
+    anchors: [("post".into(), "article".into())].into(),
+    scope_pairs: vec![("post:body".into(), "article:content".into())],
+    excluded_targets: vec![],
+    excluded_sources: vec![],
+    scoring_weights: None,
+    name_similarity_threshold: None,
+};
+let (anchors, domain_constraints) = resolve_hints(&parts, &old_schema, &new_schema);
+let result = auto_generate_with_hints(
+    &old_schema, &new_schema, &protocol, &config,
+    &anchors, &domain_constraints, Some(0.5),
+)?;
 ```
 
 ### panproto_check (breaking changes)

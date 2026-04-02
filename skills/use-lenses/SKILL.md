@@ -54,6 +54,50 @@ let result = panproto_lens::auto_generate(&old_schema, &new_schema, &protocol, &
 let lens = result.lens;
 ```
 
+### Hint-guided generation (0.26.0+)
+
+When auto-generation is ambiguous (e.g., multiple possible field mappings), provide hints to guide the morphism search:
+
+**CLI:**
+```bash
+schema lens generate old.json new.json --protocol atproto --hints hints.json
+```
+
+Where `hints.json` is a `HintSpec`:
+```json
+{
+  "anchors": { "post": "article", "post:body": "article:content" },
+  "constraints": [
+    { "type": "scope", "under": "post:body", "targets": "article:content" },
+    { "type": "exclude_targets", "vertices": ["article:legacy"] },
+    { "type": "prefer", "predicate": { "kind": "similar_name", "threshold": 0.6 }, "weight": 2.0 }
+  ]
+}
+```
+
+**Anchors** seed the morphism search with known vertex correspondences. Forward-chaining constraint propagation derives additional anchors along unique edge-name matches.
+
+**Constraints** restrict the CSP solver:
+- `scope`: restrict search to vertices under a given parent pair
+- `exclude_targets` / `exclude_sources`: remove vertices from consideration
+- `prefer`: adjust scoring weights (e.g., prefer same edge names, similar names, same kinds)
+
+**TypeScript:**
+```typescript
+const chain = p.protolensChainWithHints(oldSchema, newSchema, {
+  anchors: { 'post': 'article' },
+  constraints: [{ type: 'scope', under: 'post:body', targets: 'article:content' }],
+});
+```
+
+**Python:**
+```python
+chain = panproto.ProtolensChain.auto_generate_with_hints(
+    old_schema, new_schema, proto,
+    hints={"post": "article", "post:body": "article:content"}
+)
+```
+
 ### Optic classification
 
 Auto-generation classifies the transform quality:

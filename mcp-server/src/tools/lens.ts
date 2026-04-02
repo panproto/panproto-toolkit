@@ -12,11 +12,13 @@ export function registerLensTools(server: McpServer): void {
       protocol: z.string().describe("Protocol name"),
       json: z.boolean().optional().describe("Output as JSON"),
       save: z.string().optional().describe("Save protolens chain to this file path"),
+      hints: z.string().optional().describe("Path to a HintSpec JSON file for guided auto-lens generation (anchors, scope constraints, exclusions, scoring preferences)"),
     },
-    withErrorBoundary(async ({ old_schema, new_schema, protocol, json, save }) => {
+    withErrorBoundary(async ({ old_schema, new_schema, protocol, json, save, hints }) => {
       const args = ["lens", "generate", "--protocol", protocol];
       if (json) args.push("--json");
       if (save) args.push("--save", save);
+      if (hints) args.push("--hints", hints);
       args.push(old_schema, new_schema);
       const result = await execCli(...args);
       return textContent(result);

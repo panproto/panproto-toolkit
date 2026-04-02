@@ -132,6 +132,16 @@ console.log(laws.getPut, laws.putGet);  // true, true
 
 // Compose
 const composed = p.composeLenses(chainAB, chainBC);
+
+// Hint-guided auto-generation (0.26.0+)
+const hintedChain = p.protolensChainWithHints(oldSchema, newSchema, {
+  anchors: { 'post': 'article', 'post:body': 'article:content' },
+  constraints: [
+    { type: 'scope', under: 'post:body', targets: 'article:content' },
+    { type: 'exclude_targets', vertices: ['article:legacy'] },
+    { type: 'prefer', predicate: { kind: 'similar_name', threshold: 0.6 }, weight: 2.0 },
+  ],
+});
 ```
 
 ### SymmetricLens
