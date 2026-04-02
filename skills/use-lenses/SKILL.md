@@ -49,7 +49,9 @@ lens, quality = panproto.auto_generate_lens(old_schema, new_schema, proto)
 
 **Rust:**
 ```rust
-let lens = panproto_lens::auto_generate(&old_schema, &new_schema)?;
+let config = panproto_lens::AutoLensConfig::default();
+let result = panproto_lens::auto_generate(&old_schema, &new_schema, &protocol, &config)?;
+let lens = result.lens;
 ```
 
 ### Optic classification

@@ -45,7 +45,8 @@ lens, quality = panproto.auto_generate_lens(old_schema, new_schema, proto)
 
 **Rust:**
 ```rust
-let lens = panproto_lens::auto_generate(&old_schema, &new_schema)?;
+let config = panproto_lens::AutoLensConfig::default();
+let result = panproto_lens::auto_generate(&old_schema, &new_schema, &protocol, &config)?;
 ```
 
 Auto-generation works well for: field renames, field additions with defaults, field removals, type coercions, and simple structural rearrangements.
@@ -139,7 +140,7 @@ result = compiled.lift(record)
 **Rust:**
 ```rust
 let compiled = panproto_mig::compile(&old_schema, &new_schema, &migration)?;
-let result = panproto_mig::lift_wtype(&instance, &old_schema, &new_schema, &compiled)?;
+let result = panproto_mig::lift_wtype(&compiled, &old_schema, &new_schema, &instance)?;
 ```
 
 ## Step 5: Apply to data

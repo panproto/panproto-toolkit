@@ -61,11 +61,11 @@ results = panproto.query(instance, schema,
 ### Rust
 
 ```rust
-use panproto_expr_parser::parse;
+use panproto_expr_parser;
 
-let filter = parse(r#"\row -> row.age > 21"#)?;
+let tokens = panproto_expr_parser::tokenize(r#"\row -> row.age > 21"#)?;
+let filter = panproto_expr_parser::parse(&tokens)?;
 let projection = vec!["name".to_string(), "email".to_string()];
-let results = panproto_inst::query(&instance, &schema, Some(&filter), &projection)?;
 ```
 
 ## Predicate expressions

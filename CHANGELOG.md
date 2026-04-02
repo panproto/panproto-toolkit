@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.1] - 2026-04-02
+
+Fix Rust API inaccuracies across skill files and update crate count.
+
+### Fixed
+- **skills/sdk-rust**: corrected function signatures for `auto_generate` (4 args), `colimit` (4 args), `check_morphism` (3 args), `typecheck_term` (3 args), `free_model` (2 args), `check_existence` (5 args), `lift_wtype` (arg order), `find_morphisms` (3 args), `parse_json` (3 args), `check_laws` (returns `Result`), `validate`/`normalize` (free functions), IO registry methods (`parse_wtype`/`emit_wtype`), VCS `init`/`commit` signatures, `report_text` (free function), error example variant, and `openapi` module path
+- **skills/build-migration**: corrected `auto_generate` args and `lift_wtype` arg order
+- **skills/build-protocol**: corrected `colimit` to `colimit_by_name` with correct 3-arg signature
+- **skills/convert-data**: fixed invalid protocol paths and IO registry usage
+- **skills/dependent-optics**: fixed `TheoryTransform` import path, `Sort` construction, `ValueKind::Float`
+- **skills/field-transforms**: fixed two-step expr parsing, `ComputeField.target_key`, replaced nonexistent `CoerceType` with `ApplyExpr`
+- **skills/protolenses**: corrected `auto_generate` args
+- **skills/use-lenses**: corrected `auto_generate` args
+- **skills/query-instances**: fixed two-step expr parsing, removed nonexistent `query` function
+- **skills/contributing**: corrected crate count from 27 to 24, added missing `panproto-lens-dsl` to architecture diagram
+
 ## [0.4.0] - 2026-04-01
 
 Updated for panproto v0.25.0 (declarative lens DSL with Nickel composition).

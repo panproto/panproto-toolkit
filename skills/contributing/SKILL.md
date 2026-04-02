@@ -40,12 +40,12 @@ maturin develop --manifest-path crates/panproto-py/Cargo.toml
 
 ## Architecture
 
-panproto has 27 crates organized in a dependency hierarchy:
+panproto has 24 crates organized in a dependency hierarchy:
 
 ```
 Level 0 (foundation):   panproto-gat
 Level 1 (representation): panproto-expr, panproto-expr-parser, panproto-schema
-Level 2 (operations):    panproto-inst, panproto-mig, panproto-lens, panproto-check
+Level 2 (operations):    panproto-inst, panproto-mig, panproto-lens, panproto-lens-dsl, panproto-check
 Level 3 (application):   panproto-protocols, panproto-io, panproto-vcs, panproto-parse
 Level 4 (integration):   panproto-project, panproto-git, panproto-llvm, panproto-jit
 Level 5 (bindings):      panproto-core, panproto-wasm, panproto-py, panproto-cli

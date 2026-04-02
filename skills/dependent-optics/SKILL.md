@@ -83,13 +83,16 @@ schema lens apply \
 ## Rust API
 
 ```rust
-use panproto_gat::schema_functor::TheoryTransform;
-use panproto_gat::sort::Sort;
+use panproto_gat::TheoryTransform;
 
 let transform = TheoryTransform::ScopedTransform {
     focus: "word".into(),
     inner: Box::new(TheoryTransform::AddSortWithDefault {
-        sort: Sort::val("confidence", ValueKind::Number),
+        sort: panproto_gat::Sort {
+            name: "confidence".into(),
+            params: vec![],
+            kind: panproto_gat::SortKind::Val(panproto_gat::ValueKind::Float),
+        },
         vertex_kind: None,
         default_expr: panproto_expr::Expr::Lit(
             panproto_expr::Literal::Float(1.0),

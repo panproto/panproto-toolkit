@@ -15,7 +15,7 @@ You are helping a user work with panproto as a Rust library via the `panproto-co
 Add to your `Cargo.toml`:
 ```toml
 [dependencies]
-panproto-core = "0.22"
+panproto-core = "0.25"
 ```
 
 ### Feature flags
@@ -33,15 +33,15 @@ panproto-core = "0.22"
 
 ```toml
 # Example: core + parsing + git bridge
-panproto-core = { version = "0.22", features = ["full-parse", "git"] }
+panproto-core = { version = "0.25", features = ["full-parse", "git"] }
 ```
 
 Or depend on individual crates for finer control:
 ```toml
-panproto-gat = "0.22"
-panproto-schema = "0.22"
-panproto-mig = "0.22"
-panproto-lens = "0.22"
+panproto-gat = "0.25"
+panproto-schema = "0.25"
+panproto-mig = "0.25"
+panproto-lens = "0.25"
 ```
 
 ## Quick start
@@ -64,8 +64,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     // Auto-generate a lens between two schema versions
-    let lens = panproto_lens::auto_generate(&old_schema, &new_schema)?;
-    let (view, complement) = panproto_lens::get(&lens, &instance)?;
+    let config = panproto_lens::AutoLensConfig::default();
+    let result = panproto_lens::auto_generate(&old_schema, &new_schema, &proto, &config)?;
+    let (view, complement) = panproto_lens::get(&result.lens, &instance)?;
 
     Ok(())
 }
@@ -81,17 +82,18 @@ use panproto_gat::*;
 // Create a theory
 let theory = Theory { name: "MyTheory".into(), sorts: vec![...], ops: vec![...], eqs: vec![] };
 
-// Compose theories via colimit
-let composed = colimit(&theory_a, &theory_b, &shared)?;
+// Compose theories via colimit (takes two theories + two inclusion morphisms)
+let result = colimit(&theory_a, &theory_b, &inclusion_a, &inclusion_b)?;
 
 // Check a morphism preserves structure
-check_morphism(&morphism)?;
+check_morphism(&morphism, &domain, &codomain)?;
 
 // Type-check a term against a theory
-typecheck_term(&theory, &term)?;
+typecheck_term(&term, &ctx, &theory)?;
 
 // Generate a free model (test data)
-let model = free_model(&theory)?;
+let config = FreeModelConfig::default();
+let result = free_model(&theory, &config)?;
 ```
 
 ### panproto_schema (Level 1: schemas)
@@ -99,7 +101,7 @@ let model = free_model(&theory)?;
 ```rust
 use panproto_schema::*;
 
-let proto = panproto_protocols::openapi::protocol();
+let proto = panproto_protocols::api::openapi::protocol();
 let schema = SchemaBuilder::new(&proto)
     .vertex("user", "object", None)?
     .vertex("user.name", "string", None)?
@@ -107,11 +109,11 @@ let schema = SchemaBuilder::new(&proto)
     .constraint("user.name", "required", "true")
     .build()?;
 
-// Validate
-schema.validate(&proto)?;
+// Validate (free function, not a method)
+let errors = panproto_schema::validate(&schema, &proto);
 
 // Normalize (collapse reference chains)
-let normalized = schema.normalize()?;
+let normalized = panproto_schema::normalize(&schema);
 ```
 
 ### panproto_inst (Level 2: instances)
@@ -119,11 +121,11 @@ let normalized = schema.normalize()?;
 ```rust
 use panproto_inst::*;
 
-// Parse JSON into a W-type instance
-let instance = parse_json(&schema, &json_value)?;
+// Parse JSON into a W-type instance (requires root vertex name)
+let instance = parse_json(&schema, "root_vertex", &json_value)?;
 
-// Validate instance against schema
-validate_wtype(&instance, &schema)?;
+// Validate instance against schema (returns Vec<ValidationError>)
+let errors = validate_wtype(&schema, &instance);
 
 // Convert instance to JSON
 let json = instance.to_json(&schema)?;
@@ -135,19 +137,19 @@ let json = instance.to_json(&schema)?;
 use panproto_mig::*;
 
 // Check existence conditions
-check_existence(&old_schema, &new_schema, &migration)?;
+check_existence(&protocol, &old_schema, &new_schema, &migration, &theory_registry)?;
 
 // Compile for fast per-record application
 let compiled = compile(&old_schema, &new_schema, &migration)?;
 
-// Lift a record
-let result = lift_wtype(&instance, &old_schema, &new_schema, &compiled)?;
+// Lift a record (note arg order: compiled first, then schemas, then instance)
+let result = lift_wtype(&compiled, &old_schema, &new_schema, &instance)?;
 
 // Compose two migrations
 let composed = compose(&mig_ab, &mig_bc)?;
 
 // Auto-discover morphisms via CSP
-let morphisms = find_morphisms(&schema_a, &schema_b)?;
+let morphisms = find_morphisms(&schema_a, &schema_b, &search_opts);
 ```
 
 ### panproto_lens (lenses and protolenses)
@@ -155,8 +157,10 @@ let morphisms = find_morphisms(&schema_a, &schema_b)?;
 ```rust
 use panproto_lens::*;
 
-// Auto-generate a lens
-let lens = auto_generate(&old_schema, &new_schema)?;
+// Auto-generate a lens (requires protocol and config)
+let config = AutoLensConfig::default();
+let result = auto_generate(&old_schema, &new_schema, &protocol, &config)?;
+let lens = result.lens;
 
 // Forward projection (get)
 let (view, complement) = get(&lens, &instance)?;
@@ -167,10 +171,8 @@ let restored = put(&lens, &modified_view, &complement)?;
 // Compose lenses
 let composed = compose(&lens_ab, &lens_bc)?;
 
-// Verify round-trip laws
-let laws = check_laws(&lens, &test_instance)?;
-assert!(laws.get_put);
-assert!(laws.put_get);
+// Verify round-trip laws (returns Result<(), LawViolation>)
+check_laws(&lens, &test_instance)?;
 ```
 
 ### panproto_check (breaking changes)
@@ -181,7 +183,7 @@ use panproto_check::*;
 let diff = diff(&old_schema, &new_schema);
 let report = classify(&diff, &proto);
 
-println!("{}", report.report_text());
+println!("{}", panproto_check::report_text(&report));
 println!("Compatible: {}", report.compatible);
 ```
 
@@ -191,18 +193,19 @@ println!("Compatible: {}", report.compatible);
 use panproto_io::*;
 
 let registry = default_registry();
-let instance = registry.parse("atproto", &data)?;
-let output = registry.emit("openapi", &instance)?;
+let instance = registry.parse_wtype("atproto", &schema, &data)?;
+let output = registry.emit_wtype("openapi", &schema, &instance)?;
 ```
 
 ### panproto_vcs (version control)
 
 ```rust
 use panproto_vcs::*;
+use std::path::Path;
 
-let repo = Repository::init(".")?;
+let mut repo = Repository::init(Path::new("."))?;
 repo.add("schemas/post.json")?;
-repo.commit("initial schema", "author", chrono::Utc::now())?;
+repo.commit("initial schema", "author")?;
 repo.branch("feature")?;
 repo.checkout("feature")?;
 
@@ -214,12 +217,22 @@ repo.merge("feature")?;
 ### panproto_expr (expressions)
 
 ```rust
+use std::sync::Arc;
 use panproto_expr::*;
-use panproto_expr_parser::*;
+use panproto_expr_parser;
 
-let expr = parse("\\x -> x + 1")?;
-let result = eval(&expr, &env)?;
+// Two-step: tokenize then parse
+let tokens = panproto_expr_parser::tokenize("\\x -> x + 1")?;
+let expr = panproto_expr_parser::parse(&tokens)?;
+
+// Evaluate with an environment
+let env = Env::new().extend(Arc::from("x"), Literal::Int(5));
+let config = EvalConfig { max_steps: 10_000, max_depth: 100, max_list_len: 1000 };
+let result = eval(&expr, &env, &config)?;
+// result == Literal::Int(6)
 ```
+
+**Note:** `Env::extend` takes `Arc<str>` keys (not `&str`). `Literal::Record` uses `Vec<(Arc<str>, Literal)>` (not `HashMap`).
 
 ### panproto_parse (full-AST parsing, requires `full-parse` feature)
 
@@ -249,10 +262,8 @@ All errors are `#[non_exhaustive]` and implement `std::error::Error`. Use `?` fo
 ```rust
 match panproto_mig::compile(&src, &tgt, &mig) {
     Ok(compiled) => { /* use compiled */ }
-    Err(MigError::ExistenceViolation(issues)) => {
-        for issue in issues {
-            eprintln!("  {issue}");
-        }
+    Err(ExistenceError::EdgeMissing { src, tgt, kind }) => {
+        eprintln!("  missing edge: {src} -> {tgt} (kind: {kind})");
     }
     Err(e) => return Err(e.into()),
 }

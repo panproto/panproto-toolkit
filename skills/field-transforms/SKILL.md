@@ -138,18 +138,25 @@ lens, quality = panproto.auto_generate_lens(
 
 ```rust
 use panproto_inst::FieldTransform;
-use panproto_expr_parser::parse;
+use panproto_expr_parser;
+
+fn parse_expr(s: &str) -> panproto_expr::Expr {
+    let tokens = panproto_expr_parser::tokenize(s).unwrap();
+    panproto_expr_parser::parse(&tokens).unwrap()
+}
 
 let transforms = vec![
     FieldTransform::ComputeField {
-        target: "user.fullName".into(),
-        expr: parse(r#"\record -> record.firstName ++ " " ++ record.lastName"#)?,
+        target_key: "user.fullName".into(),
+        expr: parse_expr(r#"\record -> record.firstName ++ " " ++ record.lastName"#),
+        inverse: None,
+        coercion_class: panproto_gat::CoercionClass::Opaque,
     },
-    FieldTransform::CoerceType {
-        target: "user.age".into(),
-        from: "string".into(),
-        to: "integer".into(),
-        expr: parse(r#"\s -> parseInt s"#)?,
+    FieldTransform::ApplyExpr {
+        key: "user.age".into(),
+        expr: parse_expr(r#"\s -> parseInt s"#),
+        inverse: None,
+        coercion_class: panproto_gat::CoercionClass::Opaque,
     },
 ];
 ```

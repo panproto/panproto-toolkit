@@ -81,10 +81,14 @@ proto = panproto.define_protocol("my-format", schema_theory, instance_theory)
 
 **Rust:**
 ```rust
-use panproto_gat::colimit;
+use panproto_gat::colimit_by_name;
 use panproto_protocols::theories::*;
 
-let schema_theory = colimit(&[th_graph(), th_constraint(), th_meta()])?;
+// colimit_by_name identifies shared sorts/ops by name.
+// The third argument is the shared sub-theory common to both.
+let graph = th_graph();
+let step1 = colimit_by_name(&graph, &th_constraint(), &graph)?;
+let schema_theory = colimit_by_name(&step1, &th_meta(), &graph)?;
 let instance_theory = th_wtype();
 
 let proto = Protocol::new("my-format", schema_theory, instance_theory);

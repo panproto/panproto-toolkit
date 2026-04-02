@@ -75,13 +75,15 @@ output = panproto.emit_instance(tgt_proto, converted)
 ```rust
 use panproto_core::*;
 
-let src_proto = panproto_protocols::json_schema::protocol();
-let tgt_proto = panproto_protocols::openapi::protocol();
+let src_proto = panproto_protocols::data_schema::cddl::protocol();
+let tgt_proto = panproto_protocols::api::openapi::protocol();
 
-let src_instance = panproto_io::parse_wtype(&src_proto, &source_data)?;
-let lens = panproto_lens::auto_generate(&src_schema, &tgt_schema)?;
-let (view, _complement) = panproto_lens::get(&lens, &src_instance)?;
-let output = panproto_io::emit_instance(&tgt_proto, &view)?;
+let registry = panproto_io::default_registry();
+let src_instance = registry.parse_wtype("cddl", &src_schema, &source_data)?;
+let config = panproto_lens::AutoLensConfig::default();
+let result = panproto_lens::auto_generate(&src_schema, &tgt_schema, &src_proto, &config)?;
+let (view, _complement) = panproto_lens::get(&result.lens, &src_instance)?;
+let output = registry.emit_wtype("openapi", &tgt_schema, &view)?;
 ```
 
 ## Step 3: Batch conversion
