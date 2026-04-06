@@ -15,7 +15,7 @@ You are helping a user work with panproto as a Rust library via the `panproto-co
 Add to your `Cargo.toml`:
 ```toml
 [dependencies]
-panproto-core = "0.26"
+panproto-core = "0.27"
 ```
 
 ### Feature flags
@@ -33,15 +33,15 @@ panproto-core = "0.26"
 
 ```toml
 # Example: core + parsing + git bridge
-panproto-core = { version = "0.25", features = ["full-parse", "git"] }
+panproto-core = { version = "0.27", features = ["full-parse", "git"] }
 ```
 
 Or depend on individual crates for finer control:
 ```toml
-panproto-gat = "0.26"
-panproto-schema = "0.26"
-panproto-mig = "0.26"
-panproto-lens = "0.26"
+panproto-gat = "0.27"
+panproto-schema = "0.27"
+panproto-mig = "0.27"
+panproto-lens = "0.27"
 ```
 
 ## Quick start

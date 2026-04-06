@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.0] - 2026-04-06
+
+Updated for panproto v0.27.0 (declarative theory definitions).
+
+### Added
+- **MCP server**: new `panproto_theory_validate`, `panproto_theory_compile`, `panproto_theory_compile_dir`, `panproto_theory_check_morphism`, `panproto_theory_recompose` tools wrapping `schema theory` CLI subcommands
+- **skills/build-protocol**: new "Declarative theory definitions (0.27.0+)" section showing YAML and Nickel theory authoring, bundle format, and CLI usage
+
+### Changed
+- All version references updated to panproto 0.27.0
+- MCP server version bumped to 0.6.0 (package) / 0.5.0 (McpServer)
+- `@panproto/core` dependency updated to `^0.27.0`
+- Template project dependencies updated to panproto 0.27.0
+- **skills/sdk-rust**: crate version examples updated to 0.27
+
 ## [0.5.0] - 2026-04-02
 
 Updated for panproto v0.26.0 (hint-guided auto-lens generation).

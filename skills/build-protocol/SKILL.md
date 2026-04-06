@@ -189,7 +189,67 @@ const proto = p.defineProtocol('config', schemaTheory, p.builtinTheory('ThWType'
 });
 ```
 
+## Declarative theory definitions (0.27.0+)
+
+Instead of writing Rust/TypeScript/Python, you can define theories, compositions, and protocols as data files using `panproto-theory-dsl`:
+
+**YAML:**
+```yaml
+id: dev.my-domain.config-protocol
+description: Custom config file protocol
+bundle: config
+
+theories:
+  - theory: ThConfig
+    sorts: [{ name: Vertex }, { name: Edge }]
+    ops:
+      - { name: src, input: Edge, output: Vertex }
+      - { name: tgt, input: Edge, output: Vertex }
+
+compositions:
+  - result: ThConfigSchema
+    bases: [ThConfig, ThConstraint]
+    steps:
+      - left: ThConfig
+        right: ThConstraint
+        shared_sorts: [Vertex]
+
+protocols:
+  - protocol: config
+    schema_theory: ThConfigSchema
+    instance_theory: ThWType
+    edge_rules:
+      - { edge_kind: has-section, src_kind: config, tgt_kind: section }
+      - { edge_kind: has-key, src_kind: section, tgt_kind: key }
+```
+
+**Nickel:**
+```nickel
+let T = import "panproto/theory.ncl" in
+
+{
+  id = "dev.my-domain.graph-theory",
+  description = "Simple directed graph",
+  theory = "ThMyGraph",
+  sorts = [T.simple "Vertex", T.simple "Edge"],
+  ops = [
+    T.unary "src" "Edge" "Vertex",
+    T.unary "tgt" "Edge" "Vertex",
+  ],
+} | T.Theory
+```
+
+**CLI:**
+```bash
+schema theory validate my_theory.yaml
+schema theory compile my_theory.yaml --json
+schema theory compile-dir theories/
+```
+
+This approach requires no Rust code, no recompilation, and the resulting theories work with all panproto operations (validation, migration, lenses, breaking-change detection).
+
 ## Further Reading
 
 - [Tutorial Ch. 9: Building Your Own Protocol](https://panproto.dev/tutorial/chapters/09-building-your-own-protocol.html)
 - [Tutorial Ch. 14: Self-Description and Building Blocks](https://panproto.dev/tutorial/chapters/14-self-description-and-building-blocks.html)
+- [Tutorial Ch. 18d: Declarative Theory Specifications](https://panproto.dev/tutorial/chapters/18d-declarative-theory-specifications.html)
