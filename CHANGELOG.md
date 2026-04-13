@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.0] - 2026-04-13
+
+Updated for panproto v0.29.0 (polymorphic query engine, git-remote-cospan distribution).
+
+### Changed
+- All version references updated to panproto 0.29.0
+- MCP server version bumped to 0.7.0
+- `@panproto/core` dependency updated to `^0.29.0`
+- Template project dependencies updated to panproto 0.29.0
+
 ## [0.6.0] - 2026-04-06
 
 Updated for panproto v0.27.0 (declarative theory definitions).
