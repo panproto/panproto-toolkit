@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.1] - 2026-04-14
+
+Updated for panproto v0.30.1 (WASM packaging fix; Node.js support for `@panproto/core`).
+
+### Changed
+- `mcp-server`: `@panproto/core` dependency bumped to `^0.30.1`; server version bumped to 0.7.1.
+- `templates/ts-project`: `@panproto/core` dependency bumped to `^0.30.1`.
+- `templates/rust-project`: `panproto-core` dependency bumped to `0.30.1`.
+- `templates/python-project`: `panproto` dependency bumped to `>=0.30.1`.
+
+Users following the templates now pick up the fixed `@panproto/core` npm package
+that actually includes the WASM binary. See panproto/panproto#33.
+
 ## [0.7.0] - 2026-04-13
 
 Updated for panproto v0.29.0 (polymorphic query engine, git-remote-cospan distribution).
