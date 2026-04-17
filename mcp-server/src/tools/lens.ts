@@ -5,7 +5,7 @@ import { execCli, textContent, withErrorBoundary } from "../cli.js";
 export function registerLensTools(server: McpServer): void {
   server.tool(
     "panproto_lens_generate",
-    "Auto-generate a bidirectional protolens chain between two schemas",
+    "Auto-generate a bidirectional protolens chain between two schemas. Supports Stringency tiers (strict/balanced/lenient/exploratory) to control which alignment strategies and sort coercions the search may use, and can return a ranked list of candidates with per-step confidences.",
     {
       old_schema: z.string().describe("Path to old/source schema"),
       new_schema: z.string().describe("Path to new/target schema"),
@@ -13,12 +13,18 @@ export function registerLensTools(server: McpServer): void {
       json: z.boolean().optional().describe("Output as JSON"),
       save: z.string().optional().describe("Save protolens chain to this file path"),
       hints: z.string().optional().describe("Path to a HintSpec JSON file for guided auto-lens generation (anchors, scope constraints, exclusions, scoring preferences)"),
+      stringency: z.enum(["strict", "balanced", "lenient", "exploratory"]).optional().describe("Stringency tier controlling which alignment strategies and coercions are enabled (default: balanced)"),
+      top_n: z.number().int().positive().optional().describe("Return the top N ranked candidates instead of a single chain"),
+      explain: z.boolean().optional().describe("Include per-candidate human-readable explanations and strategy provenance"),
     },
-    withErrorBoundary(async ({ old_schema, new_schema, protocol, json, save, hints }) => {
+    withErrorBoundary(async ({ old_schema, new_schema, protocol, json, save, hints, stringency, top_n, explain }) => {
       const args = ["lens", "generate", "--protocol", protocol];
       if (json) args.push("--json");
       if (save) args.push("--save", save);
       if (hints) args.push("--hints", hints);
+      if (stringency) args.push("--stringency", stringency);
+      if (top_n !== undefined) args.push("--top-n", String(top_n));
+      if (explain) args.push("--explain");
       args.push(old_schema, new_schema);
       const result = await execCli(...args);
       return textContent(result);

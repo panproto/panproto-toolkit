@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.0] - 2026-04-17
+
+Updated for panproto v0.34.0 (git-remote-panproto rename, warm cache, autolens stringency tiers from v0.33.0).
+
+### Changed
+- `mcp-server`: `@panproto/core` dependency bumped to `^0.34.0`; server version bumped to 0.8.0.
+- `templates/ts-project`: `@panproto/core` dependency bumped to `^0.34.0`.
+- `templates/rust-project`: `panproto-core` dependency bumped to `0.34.0`.
+- `templates/python-project`: `panproto` dependency bumped to `>=0.34.0`.
+- `skills/contributing`: supporting crate renamed from `git-remote-cospan` to `panproto-git-remote`. The old crate is yanked from crates.io; users should `cargo install panproto-git-remote` and use `panproto://` URLs going forward.
+
+### Added
+- `skills/use-lenses`: new sections covering the `Stringency` axis (`strict`/`balanced`/`lenient`/`exploratory`), the candidates API (`auto_generate_candidates` / `--top-n` / `--explain`), and sort-coercion witnesses with `CoerceProposal` outputs. Introduced in panproto v0.33.0.
+- `mcp-server`: `panproto_lens_generate` tool gains `stringency`, `top_n`, and `explain` parameters matching the CLI flags.
+
 ## [0.7.1] - 2026-04-14
 
 Updated for panproto v0.30.1 (WASM packaging fix; Node.js support for `@panproto/core`).

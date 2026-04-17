@@ -49,7 +49,7 @@ Level 2 (operations):    panproto-inst, panproto-mig, panproto-lens, panproto-le
 Level 3 (application):   panproto-protocols, panproto-io, panproto-vcs, panproto-parse
 Level 4 (integration):   panproto-project, panproto-git, panproto-llvm, panproto-jit
 Level 5 (bindings):      panproto-core, panproto-wasm, panproto-py, panproto-cli
-Supporting:              panproto-grammars, panproto-xrpc, git-remote-cospan
+Supporting:              panproto-grammars, panproto-xrpc, panproto-git-remote
 ```
 
 The key architectural principle: Level 0 (GAT engine) is the only hardcoded Rust. Everything above is data interpreted by the engine. Protocols are pairs of GATs. Schemas are models of schema theory GATs. Instances are models of schemas.

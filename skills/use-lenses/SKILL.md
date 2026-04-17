@@ -98,6 +98,49 @@ chain = panproto.ProtolensChain.auto_generate_with_hints(
 )
 ```
 
+### Stringency tiers (0.33.0+)
+
+Auto-generation is parameterized by a `Stringency` axis that controls which alignment strategies and coercion witnesses the search may use. Each tier enables a superset of the tier below.
+
+| Tier | Strategies enabled | When to use |
+|------|---------------------|-------------|
+| `Strict` | exact name+kind only | Same-name refactors, zero surprises |
+| `Balanced` | + alias clusters, tokenized similarity | Default; real-world renames (`createdAt ≡ timestamp`) |
+| `Lenient` | + wrap/unwrap detection, type-signature overlap, `DropSort`/`AddSort` span search | Cross-protocol (ATProto → GraphQL), heterogeneous migrations |
+| `Exploratory` | + structural priors | Last-resort; inspect candidates manually |
+
+**CLI:**
+```bash
+schema lens generate old.json new.json --protocol atproto \
+  --stringency balanced --top-n 5 --explain
+# Outputs ranked candidates with per-step confidences and a human-readable explanation.
+```
+
+**Python:**
+```python
+lens, quality, coerce_proposals = panproto.auto_generate_lens(
+    old_schema, new_schema, proto, stringency="lenient"
+)
+candidates = panproto.auto_generate_candidates(
+    old_schema, new_schema, proto, stringency="balanced", hints=None
+)
+for cand in candidates:
+    print(cand.quality, cand.coverage, cand.explanation)
+```
+
+**TypeScript:**
+```typescript
+const { candidates, coerceProposals } = await p.autoGenerateCandidates(
+  srcHandle, tgtHandle, { stringency: 'balanced', topN: 5 }
+);
+```
+
+Candidates are ranked by `quality + 0.5·coverage + 0.2·avg_step_confidence` with deterministic tie-breaks. Each carries its `StrategyTag` provenance (exact, alias, token_similarity, wrap_unwrap, type_signature, structural) so you can see *why* the search proposed each mapping.
+
+### Sort coercions
+
+At `Lenient+`, auto-generation can emit sort coercion witnesses for value conversions (Int/Float/Str/Bool pairs). Each coercion carries a `CoercionClass` (`Iso`, `Retraction`, `Projection`, `Opaque`) and is validated against the enclosing theory's naturality conditions. When a candidate proposes a coercion that isn't in the built-in `WitnessLibrary`, the output emits a `CoerceProposal` rather than silently dropping the mapping, so you can decide whether to supply a custom witness.
+
 ### Optic classification
 
 Auto-generation classifies the transform quality:
