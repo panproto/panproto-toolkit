@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0] - 2026-04-20
+
+Updated for panproto v0.35.0 (atproto `format`/`knownValues` fidelity in `parse_lexicon`; workspace-wide real-fixture examples and benches).
+
+### Changed
+- `mcp-server`: `@panproto/core` dependency bumped to `^0.35.0`; server version bumped to 0.9.0.
+- `templates/ts-project`: `@panproto/core` dependency bumped to `^0.35.0`.
+- `templates/rust-project`: `panproto-core` dependency bumped to `0.35.0`.
+- `templates/python-project`: `panproto` dependency bumped to `>=0.35.0`.
+
+Downstream consumers using `@panproto/core` to parse AT Proto Lexicons now receive `format` (`datetime`, `did`, `at-uri`, `cid`, `nsid`, `handle`, `at-identifier`, `tid`, `record-key`, `language`, `uri`) and `knownValues` as structured constraints on the corresponding string vertex. Hand-written lexicon re-parsers that existed solely to recover these fields can be dropped. Resolves panproto/panproto#42.
+
 ## [0.8.0] - 2026-04-17
 
 Updated for panproto v0.34.0 (git-remote-panproto rename, warm cache, autolens stringency tiers from v0.33.0).
