@@ -126,3 +126,16 @@ declarative lens file using `panproto-lens-dsl`. This is preferred when:
 
 Suggest Nickel for complex lenses (composition, templates) and JSON/YAML for simple ones.
 Reference the `L.remove`, `L.rename`, `L.add`, `L.map_items` combinator functions.
+
+### Alignment strategies (0.37.0+)
+
+When recommending auto-generation and explaining why anchors came out the way they did, note the six new alignment strategies added in `panproto-mig`:
+
+- `edge_label_anchors` (priority 85, every tier): pairs vertices reached via same-labeled edges. Catches field renames where the label is preserved.
+- `suffix_anchors` (priority 80, every tier): terminal dot-segment equality for namespaced IDs. Catches moves within a namespace.
+- `description_anchors` (priority 45, Balanced and above): token similarity on vertex descriptions. Helps when human-readable docs are stable across renames.
+- `neighborhood_anchors` (priority 35, Lenient and above): seeded child-pair scoring. Propagates matches from confirmed anchors to their children.
+- `wl_anchors` (priority 32, Lenient and above): Weisfeiler-Leman color-refinement structural fingerprint. Catches structurally identical subtrees across renames.
+- `embedding_anchors` (priority 20, feature-gated `lm_embeddings`): `Embedder` trait plus cosine similarity. Only active when the `lm_embeddings` feature is compiled in.
+
+Post-processing: `adjust_anchors_by_required_sets` boosts required-to-required pairings as a tiebreak. When auto-generation surfaces unexpected pairings, inspect which strategy fired at which priority to understand the outcome.

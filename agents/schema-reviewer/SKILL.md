@@ -89,3 +89,10 @@ Score: High / Medium / Low with explanation.
 ### Protocol compliance
 Whether the schema follows protocol-specific conventions.
 Score: High / Medium / Low with specific violations listed.
+
+## Notes on 0.37.0 behavior
+
+When reviewing schemas that will be consumed by hand-written theories, migrations, or lenses, note the following:
+
+- Morphism checks now honor alpha-renaming of bound variables and preserve `SortClosure` (open vs closed) across the mapping. Schemas whose theories rely on closed sorts should be reviewed with an eye to whether every producer of the closed sort is in fact in the closure list.
+- `kinds_and_constraints_compatible` is tightened: a string with `format=datetime` is distinct from a plain string. Recommend adding explicit `format` constraints to temporal, identifier, and URI fields so downstream compatibility checks behave as authors expect.

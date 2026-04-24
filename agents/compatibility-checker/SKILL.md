@@ -100,3 +100,8 @@ Any naming conflicts or convention mismatches.
 
 ### Recommendation
 Whether to proceed with translation, and any prerequisites.
+
+## Notes on 0.37.0 behavior
+
+- `kinds_and_constraints_compatible` is tightened to honor `format` metadata (for example `format=datetime`), not just the raw kind. A string with `format=datetime` and a plain string are no longer treated as compatible; flag this explicitly when it causes a regression in your compatibility matrix.
+- New alignment strategies (`edge_label_anchors`, `suffix_anchors`, `description_anchors`, `neighborhood_anchors`, `wl_anchors`, and the feature-gated `embedding_anchors`) can surface cross-protocol correspondences that older releases missed. When re-running a previously-authored compatibility analysis, expect a small number of new preserved or approximated constructs and verify them against the source intent.
