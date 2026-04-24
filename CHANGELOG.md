@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.11.0] - 2026-04-23
+
+Updated for panproto v0.37.0 (implicit arguments, closed sorts plus `Term::Case`, typed holes, let bindings, rewriting module with Knuth-Bendix and LPO, class / instance / inductive DSL bodies, theory imports, span-aware errors, six new alignment strategies, new `panproto-gat-macros` and `panproto-repl` crates).
+
+### Added
+- **skills/typeclasses**: classes and instances as theories and theory morphisms; DSL body types and the `class!`/`instance!`/`derive_theory!` proc-macros from `panproto-gat-macros`.
+- **skills/rewriting**: directed equations, `check_local_confluence`, `check_termination_via_lpo`, `alpha_eq_modulo_rewrites`, and `typecheck_equation_modulo_rewrites`.
+- **skills/implicit-arguments**: `Implicit::Yes` tag, Robinson unification recovery at call sites, `ParamSpec.implicit`, and guidance for when to mark a parameter implicit.
+- **skills/closed-sorts-and-case**: `SortClosure::Closed(ops)`, `Term::Case`, coverage and branch-consistency checks, and the Stan-emitter-as-total-function example.
+- **skills/repl**: quickstart for the `panproto-repl` binary with the full command reference.
+
+### Changed
+- `mcp-server`: `@panproto/core` dependency bumped to `^0.37.0`; server version bumped to 0.11.0.
+- `mcp-server`: `panproto_theory_validate` and `panproto_theory_compile` tool descriptions now mention the new class / instance / inductive body types and the implicit-argument, closed-sort, let-binding, and definitional-equality-modulo-rewrites features.
+- `templates/ts-project`: `@panproto/core` dependency bumped to `^0.37.0`.
+- `templates/rust-project`: `panproto-core` dependency bumped to `0.37.0`.
+- `templates/python-project`: `panproto` dependency bumped to `>=0.37.0`.
+- `skills/build-protocol`: new section documenting the 0.37.0 DSL body types (`class`, `instance`, `inductive`, `composition`, `protocol`), `TheorySpec.imports`, `ParamSpec.implicit`, and `SortSpec.closed`.
+- `agents/migration-advisor`: new section on the six alignment strategies added in `panproto-mig` (`edge_label_anchors`, `suffix_anchors`, `description_anchors`, `neighborhood_anchors`, `wl_anchors`, `embedding_anchors`) and the `adjust_anchors_by_required_sets` post-processing tiebreak.
+- `agents/compatibility-checker`: notes tightened `kinds_and_constraints_compatible` semantics (format-aware) and new alignment strategies.
+- `agents/schema-reviewer`: notes morphism checks now honor alpha-renaming and preserve `SortClosure`, and recommends explicit `format` constraints for fields whose compatibility depends on them.
+
+### Not yet wrapped
+- No CLI verbs exist in `panproto-cli` for confluence, termination, or class / instance listing; consumers should call the library APIs (`panproto_gat::rewriting`) directly until those verbs land.
+
 ## [0.9.0] - 2026-04-20
 
 Updated for panproto v0.35.0 (atproto `format`/`knownValues` fidelity in `parse_lexicon`; workspace-wide real-fixture examples and benches).

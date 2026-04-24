@@ -1,6 +1,6 @@
 # panproto-toolkit
 
-> Written for panproto v0.22.1. See [keeping up to date](#keeping-up-to-date) for version tracking.
+> Written for panproto v0.37.0. See [keeping up to date](#keeping-up-to-date) for version tracking.
 
 Claude Code skills, agents, MCP server, project templates, and CI integrations for working with [panproto](https://github.com/panproto/panproto), the schematic version control engine.
 
@@ -46,6 +46,11 @@ Invoke any skill in Claude Code with `/panproto-<name>`.
 | **cross-protocol** | `/panproto-cross-protocol` | Cross-protocol translation with loss analysis |
 | **build-protocol** | `/panproto-build-protocol` | Define custom protocols by composing building-block theories |
 | **full-ast-parsing** | `/panproto-full-ast-parsing` | Parse 248 programming languages via tree-sitter |
+| **typeclasses** | `/panproto-typeclasses` | Class / instance DSL bodies and the `class!`/`instance!`/`derive_theory!` proc-macros |
+| **rewriting** | `/panproto-rewriting` | Directed equations, Knuth-Bendix confluence, LPO termination, normalization |
+| **implicit-arguments** | `/panproto-implicit-arguments` | `Implicit::Yes` tag, Robinson unification at call sites, when to mark a parameter implicit |
+| **closed-sorts-and-case** | `/panproto-closed-sorts-and-case` | `SortClosure::Closed(ops)`, `Term::Case`, exhaustive pattern matching |
+| **repl** | `/panproto-repl` | Quickstart for the `panproto-repl` interactive shell |
 
 ### SDK guides
 

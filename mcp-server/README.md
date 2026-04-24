@@ -42,6 +42,8 @@ Add to `.vscode/settings.json`:
 
 ## Tools (30)
 
+Tool descriptions are accurate against panproto 0.37.0. The theory tools (`panproto_theory_validate`, `panproto_theory_compile`) handle the new `class`, `instance`, and `inductive` document body types in addition to `theory`, `morphism`, `composition`, and `protocol`. Confluence and termination analyses are available via the library API (`panproto_gat::rewriting`) but are not yet exposed as CLI verbs, so the MCP server does not wrap them.
+
 ### Schema
 | Tool | Description |
 |------|-------------|
