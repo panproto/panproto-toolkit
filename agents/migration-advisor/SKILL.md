@@ -139,3 +139,17 @@ When recommending auto-generation and explaining why anchors came out the way th
 - `embedding_anchors` (priority 20, feature-gated `lm_embeddings`): `Embedder` trait plus cosine similarity. Only active when the `lm_embeddings` feature is compiled in.
 
 Post-processing: `adjust_anchors_by_required_sets` boosts required-to-required pairings as a tiebreak. When auto-generation surfaces unexpected pairings, inspect which strategy fired at which priority to understand the outcome.
+
+### Coercion law honesty (0.38.0+)
+
+Before synthesizing a migration that relies on coerce anchors, run the sample-based law checker on the enclosing theory:
+
+```bash
+schema theory check-coercion-laws theory.ncl --json
+```
+
+The checker falsifies dishonest `Iso` and `Retraction` declarations against representative samples per `ValueKind`. A dishonest `Iso` that survives into a migration corrupts the asymmetric-lens put law silently; a failing sample here saves thousands of records downstream. When advising on a migration that touches coercions, recommend running the checker first and, for the auto-lens path, enabling `AutoLensConfig.coercion_law_registry` so the CSP pre-excludes coerce anchors whose declared class is falsifiable.
+
+### Naturality-aware span exclusion (0.38.0+)
+
+`panproto-lens::auto_lens` at `Stringency::Lenient` and above now pre-excludes source vertices that cannot participate in any naturality-consistent mapping given the seeded anchors. Migrations that previously failed with empty candidate sets on sparse-overlap schema pairs may now succeed on 0.38 without additional hints; retry before reaching for manual morphisms. Fixes panproto/panproto#51.

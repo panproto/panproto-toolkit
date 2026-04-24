@@ -96,3 +96,11 @@ When reviewing schemas that will be consumed by hand-written theories, migration
 
 - Morphism checks now honor alpha-renaming of bound variables and preserve `SortClosure` (open vs closed) across the mapping. Schemas whose theories rely on closed sorts should be reviewed with an eye to whether every producer of the closed sort is in fact in the closure list.
 - `kinds_and_constraints_compatible` is tightened: a string with `format=datetime` is distinct from a plain string. Recommend adding explicit `format` constraints to temporal, identifier, and URI fields so downstream compatibility checks behave as authors expect.
+
+## Notes on 0.38.0 behavior
+
+When reviewing a schema whose enclosing theory contains directed equations with coercion class declarations (`Iso`, `Retraction`, `Projection`, `Opaque`):
+
+- Recommend running `schema theory check-coercion-laws theory.ncl --json` as part of the review. A dishonest `Iso` declaration will corrupt the asymmetric-lens put law downstream; the sample-based checker catches it cheaply.
+- For schemas where auto-lens generation is expected to emit coerce anchors (cross-kind migrations, Int/Float/Str conversions, `Lenient+` stringency runs), recommend enabling `AutoLensConfig.coercion_law_registry` so dishonest coerce anchors are filtered from the CSP scope rather than surfaced as migration candidates.
+- Naturality-aware span exclusion at `Lenient+` reduces spurious empty-candidate failures on sparse-overlap schema pairs. If previous review notes recommended adding hints to recover from an empty candidate set, re-run before recommending that workaround.

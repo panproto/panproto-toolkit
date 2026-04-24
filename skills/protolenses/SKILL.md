@@ -99,6 +99,10 @@ schema lens inspect chain.json --protocol atproto
 | **Affine** | Partial function | Yes, and may fail on some inputs |
 | **General** | None of above | Yes |
 
+## Naturality-aware span exclusion (0.38.0+)
+
+At `Stringency::Lenient` and above, the CSP scope is now pre-filtered by a naturality consistency predicate: source vertices that cannot participate in any seed-respecting mapping are excluded before the solver runs. The previous kind-only predicate kept too many sources in scope on sparse-overlap schema pairs, causing the search to bail with no candidates. If you have cross-protocol runs that previously failed with empty candidate sets, retry them on 0.38 before reaching for additional hints. Fixes panproto/panproto#51.
+
 ## Symbolic simplification
 
 Chains are automatically simplified to remove redundant steps. For example, `RenameVertex(a, b)` followed by `RenameVertex(b, c)` simplifies to `RenameVertex(a, c)`.

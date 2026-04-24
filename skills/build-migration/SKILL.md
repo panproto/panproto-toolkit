@@ -174,6 +174,25 @@ schema data migrate records/ --src-schema old.json --tgt-schema new.json
 schema data migrate records/   # uses schema history to find the right migration
 ```
 
+## Declare coercions honestly (0.38.0+)
+
+Migrations that cross kinds (e.g., `Int` to `Str`, `Float` to `Int`) rely on coercion witnesses declared as directed equations in the enclosing theory. Each equation carries a `CoercionClass`:
+
+| Class | Use when |
+|-------|---------|
+| `Iso` | Forward and inverse are total inverses (e.g., `Int` to its string decimal and back) |
+| `Retraction` | Forward is total; inverse recovers the forward image only (e.g., `Str::parse::<Int>` after `Int::to_string`) |
+| `Projection` | Forward drops information (e.g., `Float` to `Int` by truncation) |
+| `Opaque` | Documentation pair; no round-trip promise |
+
+A dishonest `Iso` declaration corrupts the asymmetric-lens put law silently. Before shipping a migration that uses coercions, run the sample-based law checker:
+
+```bash
+schema theory check-coercion-laws theory.ncl --json
+```
+
+Exit code is non-zero on any falsifying sample. See `/panproto-coercion-law-checks` for the full gate, violation kinds, and GitHub Actions wiring. Opt into `AutoLensConfig.coercion_law_registry` to filter dishonest coerce anchors out of the CSP search space during auto-generation.
+
 ## Step 6: Verify round-trip (optional)
 
 If you used lens-based migration, verify the round-trip laws:

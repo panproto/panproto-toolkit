@@ -141,6 +141,27 @@ Candidates are ranked by `quality + 0.5·coverage + 0.2·avg_step_confidence` wi
 
 At `Lenient+`, auto-generation can emit sort coercion witnesses for value conversions (Int/Float/Str/Bool pairs). Each coercion carries a `CoercionClass` (`Iso`, `Retraction`, `Projection`, `Opaque`) and is validated against the enclosing theory's naturality conditions. When a candidate proposes a coercion that isn't in the built-in `WitnessLibrary`, the output emits a `CoerceProposal` rather than silently dropping the mapping, so you can decide whether to supply a custom witness.
 
+Coercion class declarations are promises about round-trip behavior. Before generating a lens, run the sample-based law checker on the theory to catch dishonest `Iso` or `Retraction` declarations:
+
+```bash
+schema theory check-coercion-laws theory.ncl --json
+```
+
+See `/panproto-coercion-law-checks` for the full CI gate. The library API (`panproto_lens::coercion_laws::check_theory`) is also wired into `AutoLensConfig.coercion_law_registry` (0.38.0+) so auto-generation can filter dishonest coerce anchors out of the CSP search space before they become migration candidates:
+
+```rust
+let config = panproto_lens::AutoLensConfig {
+    coercion_law_registry: Some(
+        panproto_lens::coercion_laws::CoercionSampleRegistry::with_defaults(),
+    ),
+    ..Default::default()
+};
+```
+
+### Naturality-aware span exclusion (0.38.0+)
+
+At `Stringency::Lenient` and above, auto-generation now pre-excludes source vertices that cannot participate in any naturality-consistent mapping given the seeded anchors. Before 0.38 the exclusion predicate was kind-only, which left too many candidates in scope on sparse-overlap schema pairs and caused the CSP to bail with no solutions. Existing runs that previously surfaced spurious "no candidates" failures on cross-protocol pairs should now succeed. Fixes panproto/panproto#51.
+
 ### Optic classification
 
 Auto-generation classifies the transform quality:

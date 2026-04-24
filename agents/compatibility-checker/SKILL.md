@@ -105,3 +105,8 @@ Whether to proceed with translation, and any prerequisites.
 
 - `kinds_and_constraints_compatible` is tightened to honor `format` metadata (for example `format=datetime`), not just the raw kind. A string with `format=datetime` and a plain string are no longer treated as compatible; flag this explicitly when it causes a regression in your compatibility matrix.
 - New alignment strategies (`edge_label_anchors`, `suffix_anchors`, `description_anchors`, `neighborhood_anchors`, `wl_anchors`, and the feature-gated `embedding_anchors`) can surface cross-protocol correspondences that older releases missed. When re-running a previously-authored compatibility analysis, expect a small number of new preserved or approximated constructs and verify them against the source intent.
+
+## Notes on 0.38.0 behavior
+
+- Coercion-law violations are a new class of check, distinct from structural compatibility. Two schemas can be structurally compatible yet rely on a theory whose declared coercions are dishonest; run `schema theory check-coercion-laws theory.ncl --json` alongside `schema check` when the translation involves cross-kind coercions. The violation kinds (`Backward`, `Forward`, `NonDeterministic`, `MissingInverse`, `ForwardEvalError`, `InverseEvalError`, `UnknownClass`) belong in the "approximated constructs" section of the compatibility report when present, with a note that the declared class was falsified on sample input.
+- Naturality-aware span exclusion at `Stringency::Lenient` and above reduces spurious empty-candidate failures on sparse-overlap cross-protocol pairs. Expect fewer "no translation possible" verdicts on 0.38 for pairs that previously required manual anchors.
