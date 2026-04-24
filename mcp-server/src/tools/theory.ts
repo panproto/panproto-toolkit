@@ -66,4 +66,26 @@ export function registerTheoryTools(server: McpServer): void {
       return textContent(result);
     })
   );
+
+  server.tool(
+    "panproto_theory_check_coercion_laws",
+    "Run sample-based coercion law verification on every directed equation in a theory document (0.38.0+). Reports violations of declared Iso / Retraction / Projection / Opaque round-trip laws with serde-tagged kinds (Backward, Forward, NonDeterministic, MissingInverse, ForwardEvalError, InverseEvalError, UnknownClass). Intended for CI gates against dishonest coercion declarations; exits non-zero on any violation.",
+    {
+      file: z.string().describe("Path to the theory document (.ncl, .json, .yaml)"),
+      var_name: z.string().optional().describe("Override the default 'x' binder used when evaluating equation expressions"),
+      json: z.boolean().optional().describe("Emit machine-readable JSON report"),
+    },
+    withErrorBoundary(async ({ file, var_name, json }) => {
+      const args = ["theory", "check-coercion-laws"];
+      if (var_name) {
+        args.push("--var-name", var_name);
+      }
+      if (json) {
+        args.push("--json");
+      }
+      args.push(file);
+      const result = await execCli(...args);
+      return textContent(result);
+    })
+  );
 }
