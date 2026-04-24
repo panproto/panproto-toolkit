@@ -1,6 +1,6 @@
 # panproto-toolkit
 
-> Written for panproto v0.37.0. See [keeping up to date](#keeping-up-to-date) for version tracking.
+> Written for panproto v0.38.0. See [keeping up to date](#keeping-up-to-date) for version tracking.
 
 Claude Code skills, agents, MCP server, project templates, and CI integrations for working with [panproto](https://github.com/panproto/panproto), the schematic version control engine.
 
@@ -32,6 +32,7 @@ Invoke any skill in Claude Code with `/panproto-<name>`.
 | **build-migration** | `/panproto-build-migration` | Build migrations: morphisms, existence checking, compilation, lifting |
 | **use-lenses** | `/panproto-use-lenses` | Bidirectional lenses: get/put, complements, combinators, auto-generation |
 | **breaking-change-ci** | `/panproto-breaking-change-ci` | Set up breaking change detection and CI gates |
+| **coercion-law-checks** | `/panproto-coercion-law-checks` | Sample-based verification of declared coercion laws, CI gate against dishonest Iso / Retraction declarations |
 | **convert-data** | `/panproto-convert-data <from> <to>` | Convert data between any of 50 protocols |
 | **schema-vcs** | `/panproto-schema-vcs` | Schema version control: commit, branch, merge, diff, data versioning |
 
@@ -106,7 +107,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 }
 ```
 
-**18 tools** across schema validation, migration, diffing, lenses, data conversion, parsing, expressions, and version control. **3 resources** exposing the protocol/codec/grammar catalogs. **3 prompt templates** for migration planning, schema review, and compatibility analysis.
+**Tools** across schema validation, migration, diffing, lenses, data conversion, parsing, expressions, theory (including `panproto_theory_check_coercion_laws` for 0.38.0+ coercion law verification), and version control. **3 resources** exposing the protocol/codec/grammar catalogs. **3 prompt templates** for migration planning, schema review, and compatibility analysis.
 
 See [mcp-server/README.md](mcp-server/README.md) for full documentation.
 

@@ -40,9 +40,9 @@ Add to `.vscode/settings.json`:
 }
 ```
 
-## Tools (30)
+## Tools (31)
 
-Tool descriptions are accurate against panproto 0.37.0. The theory tools (`panproto_theory_validate`, `panproto_theory_compile`) handle the new `class`, `instance`, and `inductive` document body types in addition to `theory`, `morphism`, `composition`, and `protocol`. Confluence and termination analyses are available via the library API (`panproto_gat::rewriting`) but are not yet exposed as CLI verbs, so the MCP server does not wrap them.
+Tool descriptions are accurate against panproto 0.38.0. The theory tools (`panproto_theory_validate`, `panproto_theory_compile`) handle the `class`, `instance`, and `inductive` document body types in addition to `theory`, `morphism`, `composition`, and `protocol`. New in 0.12.0: `panproto_theory_check_coercion_laws` wraps the sample-based coercion law verifier for CI gates. Confluence and termination analyses are available via the library API (`panproto_gat::rewriting`) but are not yet exposed as CLI verbs, so the MCP server does not wrap them.
 
 ### Schema
 | Tool | Description |
@@ -52,6 +52,16 @@ Tool descriptions are accurate against panproto 0.37.0. The theory tools (`panpr
 | `panproto_scaffold` | Generate test data from protocol theory |
 | `panproto_typecheck` | Type-check a migration at the GAT level |
 | `panproto_health` | Check CLI installation and version |
+
+### Theory
+| Tool | Description |
+|------|-------------|
+| `panproto_theory_validate` | Validate a theory document (load + typecheck) |
+| `panproto_theory_compile` | Compile a theory document to theories / morphisms / protocols |
+| `panproto_theory_compile_dir` | Compile every theory document in a directory |
+| `panproto_theory_check_morphism` | Validate a theory morphism document |
+| `panproto_theory_recompose` | Replay a composition and print the resulting theory |
+| `panproto_theory_check_coercion_laws` | Sample-based verification of declared coercion laws (0.38.0+) |
 
 ### Migration
 | Tool | Description |

@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.12.0] - 2026-04-24
+
+Updated for panproto v0.38.0 (sample-based coercion law verification; naturality-aware span exclusion in auto-lens).
+
+### Added
+- **skills/coercion-law-checks**: new skill covering the `schema theory check-coercion-laws` CLI verb, `CoercionClass` semantics (`Iso`, `Retraction`, `Projection`, `Opaque`), the `CoercionLawViolation` kinds (`Backward`, `Forward`, `NonDeterministic`, `MissingInverse`, `ForwardEvalError`, `InverseEvalError`, `UnknownClass`), sample-registry customization via `CoercionSampleRegistry::with_defaults`, DSL-side compile-time law checks via `compile_theory_with_law_check`, the opt-in `AutoLensConfig.coercion_law_registry` auto-lens filter, and a GitHub Actions workflow for CI integration.
+- **mcp-server**: new `panproto_theory_check_coercion_laws` tool wrapping the 0.38.0 CLI verb; supports `--var-name` and `--json` flags.
+
+### Changed
+- `mcp-server`: `@panproto/core` dependency bumped to `^0.38.0`; server version bumped to 0.12.0.
+- `templates/ts-project`: `@panproto/core` dependency bumped to `^0.38.0`.
+- `templates/rust-project`: `panproto-core` dependency bumped to `0.38.0`.
+- `templates/python-project`: `panproto` dependency bumped to `>=0.38.0`.
+- `skills/use-lenses`: cross-reference to the new coercion-law-checks skill, `AutoLensConfig.coercion_law_registry`, and naturality-aware span exclusion at `Lenient+`.
+- `skills/protolenses`: new section on naturality-aware span exclusion; noted that empty-candidate failures on sparse-overlap pairs may now succeed on 0.38 without additional hints. Fixes panproto/panproto#51.
+- `skills/build-migration`: new subsection on declaring `Iso` / `Retraction` honestly and running the law check before shipping a migration.
+- `agents/migration-advisor`: recommend running `check-coercion-laws` before migration synthesis; note naturality-aware span exclusion reduces spurious empty-candidate failures.
+- `agents/schema-reviewer`: recommend enabling `AutoLensConfig.coercion_law_registry` for schema reviews where coerce anchors appear.
+- `agents/compatibility-checker`: coercion-law violations documented as a new class of check distinct from structural compatibility.
+
 ## [0.11.0] - 2026-04-23
 
 Updated for panproto v0.37.0 (implicit arguments, closed sorts plus `Term::Case`, typed holes, let bindings, rewriting module with Knuth-Bendix and LPO, class / instance / inductive DSL bodies, theory imports, span-aware errors, six new alignment strategies, new `panproto-gat-macros` and `panproto-repl` crates).
