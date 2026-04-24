@@ -248,6 +248,20 @@ schema theory compile-dir theories/
 
 This approach requires no Rust code, no recompilation, and the resulting theories work with all panproto operations (validation, migration, lenses, breaking-change detection).
 
+### Body types beyond `theory` (0.37.0+)
+
+`TheoryBody` now includes five additional document kinds alongside `theory` and `morphism`:
+
+- `class`: packages a theory as a Haskell-style interface with a carrier sort.
+- `instance`: declares that a specific theory satisfies a class; compiles to a checked theory morphism.
+- `inductive`: expands to a closed sort plus its constructor operations.
+- `composition`: replays a colimit over named bases.
+- `protocol`: registers a pair of theories as a protocol with edge rules.
+
+`TheorySpec` accepts an `imports: Vec<ImportSpec>` with alias and selective expose semantics, so protocol authors can reuse building-block theories without copying their contents. `ParamSpec` accepts `implicit: bool` on parameters that should be recovered by unification. `SortSpec` accepts `closed: Vec<String>` to declare a closed sort whose only producers are the listed operations; `Term::Case` expressions over such a sort are coverage-checked at declaration.
+
+See the `typeclasses`, `implicit-arguments`, and `closed-sorts-and-case` skills for details.
+
 ## Further Reading
 
 - [Tutorial Ch. 9: Building Your Own Protocol](https://panproto.dev/tutorial/chapters/09-building-your-own-protocol.html)
