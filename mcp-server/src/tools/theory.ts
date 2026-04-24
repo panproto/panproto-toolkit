@@ -5,7 +5,7 @@ import { execCli, textContent, withErrorBoundary } from "../cli.js";
 export function registerTheoryTools(server: McpServer): void {
   server.tool(
     "panproto_theory_validate",
-    "Validate a theory document (load + typecheck)",
+    "Validate a theory document (load + typecheck). Accepts documents containing theory, morphism, composition, protocol, class, instance, and inductive bodies (0.37.0+). Typechecker enforces implicit argument inference, closed-sort coverage for case expressions, capture-avoiding let bindings, and definitional equality modulo directed rewrites.",
     {
       file: z.string().describe("Path to the theory document (.ncl, .json, .yaml)"),
     },
@@ -17,7 +17,7 @@ export function registerTheoryTools(server: McpServer): void {
 
   server.tool(
     "panproto_theory_compile",
-    "Compile a theory document and return resulting theories, morphisms, and protocols",
+    "Compile a theory document and return resulting theories, morphisms, and protocols. Class bodies compile to theories; instance bodies compile to checked theory morphisms; inductive bodies expand to closed sorts plus constructor operations (0.37.0+). Import specs with alias and selective expose are resolved at compile time.",
     {
       file: z.string().describe("Path to the theory document"),
       json: z.boolean().optional().describe("Output as JSON"),
