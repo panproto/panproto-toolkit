@@ -1,6 +1,6 @@
 {
   "name": "@panproto/mcp-server",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "MCP server exposing panproto schema migration operations",
   "license": "MIT",
   "type": "module",
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "@panproto/core": "^0.37.0"
+    "@panproto/core": "^0.38.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
