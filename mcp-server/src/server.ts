@@ -19,7 +19,7 @@ export async function createServer(): Promise<{
 }> {
   const server = new McpServer({
     name: "panproto",
-    version: "0.12.0",
+    version: "0.12.1",
   });
 
   // Register all tool groups
