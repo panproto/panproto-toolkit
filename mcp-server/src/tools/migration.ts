@@ -44,7 +44,7 @@ export function registerMigrationTools(server: McpServer): void {
 
   server.tool(
     "panproto_auto_migrate",
-    "Automatically discover a migration morphism between two schemas via CSP search",
+    "Automatically discover a migration morphism between two schemas via CSP search. Runs the 14-strategy alignment ladder (user_hint, exact, exact_suffix, edge_label, alias, token_similarity, description_similarity, type_signature, wrap_unwrap, coerce, neighborhood, wl_refinement, structural, llm) and emits an alignmentStrategies summary (0.39.0+) keyed by these tags.",
     {
       old_schema: z.string().describe("Path to old/source schema"),
       new_schema: z.string().describe("Path to new/target schema"),

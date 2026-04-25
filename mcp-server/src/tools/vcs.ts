@@ -17,7 +17,7 @@ export function registerVcsTools(server: McpServer): void {
 
   server.tool(
     "panproto_vcs_log",
-    "Show schema commit history with optional filtering",
+    "Show schema commit history with optional filtering. As of 0.39.0, each commit record (lexicon dev.panproto.vcs.commit) carries protocolHash, theoryIds (named hashes), dataHashes, complementHashes, editLogHashes, cstComplementHashes, migrationHash, and timestamp alongside the schema-tree root hash.",
     {
       repo_path: z.string().optional().describe("Path to panproto repository (default: cwd)"),
       limit: z.number().optional().describe("Maximum number of commits to show"),
@@ -36,7 +36,7 @@ export function registerVcsTools(server: McpServer): void {
 
   server.tool(
     "panproto_vcs_diff",
-    "Diff two schema versions or show staged changes in the VCS",
+    "Diff two schema versions or show staged changes in the VCS. The schema is resolved per-commit by walking the SchemaTreeObject Merkle tree (0.38.0+); only files whose FileSchemaObject hash changed contribute to the diff.",
     {
       repo_path: z.string().optional().describe("Path to panproto repository (default: cwd)"),
       old_ref: z.string().optional().describe("Old ref or schema path"),

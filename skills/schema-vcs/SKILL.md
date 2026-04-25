@@ -12,9 +12,14 @@ You are helping a user manage schema versions with panproto's built-in VCS. It w
 ## Core concepts
 
 - **Content-addressed store**: schemas are stored by their blake3 hash in `.panproto/objects/`
-- **Commit DAG**: commits form a directed acyclic graph with parent pointers
+- **Per-file Merkle tree (0.38.0+)**: a commit no longer points at a monolithic schema object. It points at a `SchemaTreeObject`, which is either `SingleLeaf { file_schema_id }` (one file in the project) or `Directory { entries }` (a sorted list of `SchemaTreeEntry::{File, Tree}` pointing further down the tree). Each `FileSchemaObject` holds the parsed schema for one source file plus its `cross_file_edges` (edges whose target lives in a different file). Editing one file rehashes only that file's `FileSchemaObject` plus the directories on its path to the root; sibling files retain their hashes, so commits over a large project stay cheap.
+- **Commit DAG**: commits form a directed acyclic graph with parent pointers. A 0.39.0 commit record (lexicon `dev.panproto.vcs.commit`) carries `objectHash` (the schema-tree root), `schemaHash` (the flat-schema digest), `protocolHash`, `theoryIds` (named hashes), `dataHashes`, `complementHashes`, `editLogHashes`, `cstComplementHashes`, `migrationHash`, `timestamp`, and `renames`.
 - **Pushout merge**: merges are computed as categorical pushouts; no heuristic tie-breaking, the result is commutative (merge(A,B) = merge(B,A))
-- **Data versioning**: instance data, complements, and protocol definitions are stored alongside schemas
+- **Data versioning**: instance data, complements, and protocol definitions are stored alongside schemas, each as their own content-addressed object kind (`dataSet`, `cstComplement`, `editLog`, `flatSchema`, `tag`).
+
+### Walking the schema tree
+
+Resolving the full schema for a commit means walking from the root `SchemaTreeObject` down to every `FileSchemaObject` and re-stitching the cross-file edges. The library exposes this as `panproto_vcs::resolve_commit_schema(&store, commit_id)`; the lexicon-level walker is `dev.panproto.node.getSchemaTree`. For per-file inspection without rebuilding the project schema, use `dev.panproto.node.getFileSchema`.
 
 ## Getting started
 

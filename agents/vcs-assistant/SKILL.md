@@ -108,6 +108,12 @@ Common issues and fixes:
 | "Detached HEAD" | Checked out a specific commit | Run `schema checkout <branch>` to reattach |
 | "Stale data" | Data behind current schema | Run `schema data migrate` |
 
+## Notes on 0.38.0 / 0.39.0 behavior
+
+- **Per-file Merkle tree.** A commit's `objectHash` no longer addresses a monolithic schema blob; it addresses a `SchemaTreeObject` (`SingleLeaf` for one-file projects, `Directory` for multi-file). Each leaf points at a `FileSchemaObject` carrying that file's vertices, edges, constraints, and `cross_file_edges`. Editing one schema file rehashes only that file plus its directory ancestors, so `schema commit` over a large project no longer rewrites every object. When the user asks why a commit was unexpectedly fast (or wants to inspect a single file's schema in isolation), point them at `panproto_vcs::resolve_commit_schema` (Rust) or the `dev.panproto.node.getFileSchema` and `dev.panproto.node.getSchemaTree` lexicons.
+- **Richer commit records (0.39.0).** The `dev.panproto.vcs.commit` record now carries `protocolHash`, `theoryIds` (named hashes), `dataHashes`, `complementHashes`, `editLogHashes`, `cstComplementHashes`, and `timestamp` alongside the existing `schemaHash`, `migrationHash`, and `renames`. Each is a separate Merkle pointer, so a commit declares exactly which protocol, theories, data sets, complements, edit logs, and CST complements the working tree resolved against. Use `dev.panproto.node.listTheories` to enumerate the named theories cited by a commit, and `dev.panproto.node.listAlignments` to enumerate the migrations attached to it.
+- **New object kinds.** Beyond the original schema and migration records, the store now keeps `dev.panproto.vcs.{fileSchema, schemaTree, flatSchema, dataSet, editLog, cstComplement, tag}` as first-class object kinds. `gc` walks these reachability sets; tooling that hand-rolled object enumeration before 0.38 needs to be updated.
+
 ## Output format
 
 When helping with VCS operations, show:

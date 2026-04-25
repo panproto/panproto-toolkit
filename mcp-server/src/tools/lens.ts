@@ -5,7 +5,7 @@ import { execCli, textContent, withErrorBoundary } from "../cli.js";
 export function registerLensTools(server: McpServer): void {
   server.tool(
     "panproto_lens_generate",
-    "Auto-generate a bidirectional protolens chain between two schemas. Supports Stringency tiers (strict/balanced/lenient/exploratory) to control which alignment strategies and sort coercions the search may use, and can return a ranked list of candidates with per-step confidences.",
+    "Auto-generate a bidirectional protolens chain between two schemas. Supports Stringency tiers (strict/balanced/lenient/exploratory) to control which of the 14 alignment strategies (user_hint, exact, exact_suffix, edge_label, alias, token_similarity, description_similarity, type_signature, wrap_unwrap, coerce, neighborhood, wl_refinement, structural, llm) and sort coercions the search may use. Can return a ranked list of candidates with per-step confidences. Compiled migrations expose an alignmentStrategies summary (0.39.0+) keyed by these tags with anchorCount and meanConfidence.",
     {
       old_schema: z.string().describe("Path to old/source schema"),
       new_schema: z.string().describe("Path to new/target schema"),

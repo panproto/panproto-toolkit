@@ -100,18 +100,36 @@ The DSL-side call returns `TheoryDslError::CoercionLawViolation` on failure, so 
 For the auto-lens pipeline, pass the registry through `AutoLensConfig`:
 
 ```rust
-let config = panproto_lens::AutoLensConfig {
+use panproto_lens::{AutoLensConfig, FilterOptions, UnknownSamplesPolicy};
+
+let config = AutoLensConfig {
     coercion_law_registry: Some(registry),
-    filter_options: FilterOptions {
-        unknown_samples_policy: UnknownSamplesPolicy::Reject,
-        unknown_witness_policy: UnknownWitnessPolicy::Reject,
-        ..Default::default()
-    },
+    filter_options: FilterOptions::with_unknown(UnknownSamplesPolicy::Drop),
     ..Default::default()
 };
 ```
 
-This filters dishonest coerce anchors out of the CSP search space before they become migration candidates.
+`FilterOptions` has a single field, `unknown: UnknownSamplesPolicy`, with two variants:
+
+| Policy | Behavior |
+|--------|----------|
+| `Keep` (default) | Proposals whose source `ValueKind` has no registered samples, or whose witness expression cannot be located, are kept. Preserves pre-0.38 behavior. |
+| `Drop` | Same proposals are filtered out. Strictest filter: only coerce anchors whose declared class was actually exercised on samples survive. |
+
+For ad-hoc filtering outside the auto-lens path, call `filter_coerce_proposals_by_law_check_with_policy(proposals, &registry, options)` directly; it returns `(kept, dropped)` so you can log the rejected anchors.
+
+## The `verifyCoercionLaws` lexicon
+
+Service-mediated callers (federated panproto nodes, MCP, web playground) drive the same checker through `dev.panproto.translate.verifyCoercionLaws`, a `procedure` lexicon that takes:
+
+- `class`: one of `iso`, `retraction`, `projection`, `opaque`
+- `forwardExpr`, `inverseExpr`: panproto-expr source for the two directions
+- `varName`: the binder used by both expressions (default `x`)
+- `valueKind`: one of `bool`, `int`, `float`, `str`, `bytes`, `token`, `null`, `any` (matches `ValueKind`)
+- `samples` (optional): explicit literal samples, otherwise the default registry is used
+- `filter` (optional): `#filterOptions` object with `unknown: "keep" | "drop"`
+
+It returns `sampleCount` and a list of `#coercionLawViolation` entries (same `kind` taxonomy as the CLI report). Use this when integrating the checker into a non-Rust toolchain that already speaks Lexicons.
 
 ## GitHub Actions integration
 

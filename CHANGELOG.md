@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.12.1] - 2026-04-25
+
+Updated for panproto v0.39.0 (lexicon-only release surfacing features that accumulated since 0.36: Merkle-tree per-file schema content addressing, the full 14-strategy alignment ladder, sample-based coercion-law verification with `FilterOptions`, and richer commit records).
+
+### Changed
+- `skills/coercion-law-checks`: corrected the `AutoLensConfig` example. `FilterOptions` has a single field, `unknown: UnknownSamplesPolicy`, with variants `Keep` (default, pre-0.38 behavior) and `Drop` (strictest filter). The earlier writeup invented `unknown_samples_policy: Reject` and a non-existent `unknown_witness_policy`. Added a section on the new `dev.panproto.translate.verifyCoercionLaws` procedure lexicon, which exposes the same checker to non-Rust toolchains.
+- `skills/build-migration`: documented the 14-strategy alignment ladder (`user_hint`, `exact`, `exact_suffix`, `edge_label`, `alias`, `token_similarity`, `description_similarity`, `type_signature`, `wrap_unwrap`, `coerce`, `neighborhood`, `wl_refinement`, `structural`, `llm`) and the `alignmentStrategies` summary on the migration record. Cross-referenced `verifyCoercionLaws` for service-mediated callers.
+- `skills/schema-vcs`: rewrote the core-concepts list to describe the `SchemaTreeObject` Merkle tree (`SingleLeaf` and `Directory`), `FileSchemaObject` with `cross_file_edges`, and `resolve_commit_schema`. Listed every commit-record field added through 0.39.0 (`protocolHash`, `theoryIds`, `dataHashes`, `complementHashes`, `editLogHashes`, `cstComplementHashes`, `timestamp`) and the new first-class object kinds (`fileSchema`, `schemaTree`, `flatSchema`, `dataSet`, `editLog`, `cstComplement`, `tag`).
+- `agents/migration-advisor`: replaced the 6-strategy section with the 14-strategy ladder, tier gating, and the `alignmentStrategies` summary readout. Added the `FilterOptions::with_unknown(UnknownSamplesPolicy::Drop)` recommendation for the strictest coerce-anchor gate, plus the `verifyCoercionLaws` lexicon for non-Rust callers.
+- `agents/vcs-assistant`: added a 0.38 / 0.39 notes section covering the per-file Merkle tree, the richer commit record, and the new content-addressed object kinds. Pointers to `panproto_vcs::resolve_commit_schema`, `dev.panproto.node.getFileSchema`, `dev.panproto.node.getSchemaTree`, `dev.panproto.node.listTheories`, `dev.panproto.node.listAlignments`.
+- `agents/compatibility-checker`: added a 0.39 notes section recording that the 14-strategy ladder is now wire-canonical via `alignmentStrategies` and that `verifyCoercionLaws` is available for non-Rust callers.
+- `mcp-server/src/tools/lens.ts`: `panproto_lens_generate` description names all 14 alignment strategies and the new `alignmentStrategies` summary field.
+- `mcp-server/src/tools/migration.ts`: `panproto_auto_migrate` description names all 14 alignment strategies.
+- `mcp-server/src/tools/vcs.ts`: `panproto_vcs_log` and `panproto_vcs_diff` descriptions reference the new commit-record fields and the per-file Merkle-tree resolution.
+
+### Not yet wrapped
+- No MCP tool wraps `dev.panproto.translate.verifyCoercionLaws` directly; callers wanting the procedure-style entry point should hit the lexicon endpoint on a panproto node, or use the existing `panproto_theory_check_coercion_laws` tool which wraps the CLI verb against a theory file.
+- No MCP tool walks the `SchemaTreeObject` directly; `panproto_vcs_*` tools delegate to the CLI which resolves commits transparently. A dedicated `panproto_vcs_show_object` would be useful for object-level inspection.
+
 ## [0.12.0] - 2026-04-24
 
 Updated for panproto v0.38.0 (sample-based coercion law verification; naturality-aware span exclusion in auto-lens).

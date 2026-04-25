@@ -51,6 +51,8 @@ let result = panproto_lens::auto_generate(&old_schema, &new_schema, &protocol, &
 
 Auto-generation works well for: field renames, field additions with defaults, field removals, type coercions, and simple structural rearrangements.
 
+The auto-lens pipeline runs anchors through 14 alignment strategies (in priority order: `user_hint`, `exact`, `exact_suffix`, `edge_label`, `alias`, `token_similarity`, `description_similarity`, `type_signature`, `wrap_unwrap`, `coerce`, `neighborhood`, `wl_refinement`, `structural`, `llm`). The compiled migration record summarizes which strategies fired and at what confidence under `alignmentStrategies`; inspect it when an anchor surprises you. See `/panproto-migration-advisor` for the conflict-ranking ladder and per-strategy semantics.
+
 ### B. Hint-guided (for changes needing guidance) (0.26.0+)
 
 Use auto-generation with a `HintSpec` JSON file to guide ambiguous cases:
@@ -191,7 +193,9 @@ A dishonest `Iso` declaration corrupts the asymmetric-lens put law silently. Bef
 schema theory check-coercion-laws theory.ncl --json
 ```
 
-Exit code is non-zero on any falsifying sample. See `/panproto-coercion-law-checks` for the full gate, violation kinds, and GitHub Actions wiring. Opt into `AutoLensConfig.coercion_law_registry` to filter dishonest coerce anchors out of the CSP search space during auto-generation.
+Exit code is non-zero on any falsifying sample. See `/panproto-coercion-law-checks` for the full gate, violation kinds, and GitHub Actions wiring. Opt into `AutoLensConfig.coercion_law_registry` (with `FilterOptions::with_unknown(UnknownSamplesPolicy::Drop)` for the strictest gate) to filter dishonest coerce anchors out of the CSP search space during auto-generation.
+
+Service-mediated callers can drive the same checker through the `dev.panproto.translate.verifyCoercionLaws` lexicon (0.39.0+), which takes `class`, `forwardExpr`, `inverseExpr`, `varName`, `valueKind`, optional `samples`, and an optional `#filterOptions` block, returning `sampleCount` plus a list of `#coercionLawViolation` records.
 
 ## Step 6: Verify round-trip (optional)
 

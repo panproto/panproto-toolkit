@@ -127,18 +127,30 @@ declarative lens file using `panproto-lens-dsl`. This is preferred when:
 Suggest Nickel for complex lenses (composition, templates) and JSON/YAML for simple ones.
 Reference the `L.remove`, `L.rename`, `L.add`, `L.map_items` combinator functions.
 
-### Alignment strategies (0.37.0+)
+### Alignment strategies (0.37.0+, full taxonomy 0.39.0)
 
-When recommending auto-generation and explaining why anchors came out the way they did, note the six new alignment strategies added in `panproto-mig`:
+`panproto-mig` runs anchors through 14 strategies. The compiled migration record (lexicon `dev.panproto.schema.migration`) summarizes which strategies fired, with `anchorCount` and `meanConfidence`, under `alignmentStrategies`. Read that summary to explain auto-generation outcomes.
 
-- `edge_label_anchors` (priority 85, every tier): pairs vertices reached via same-labeled edges. Catches field renames where the label is preserved.
-- `suffix_anchors` (priority 80, every tier): terminal dot-segment equality for namespaced IDs. Catches moves within a namespace.
-- `description_anchors` (priority 45, Balanced and above): token similarity on vertex descriptions. Helps when human-readable docs are stable across renames.
-- `neighborhood_anchors` (priority 35, Lenient and above): seeded child-pair scoring. Propagates matches from confirmed anchors to their children.
-- `wl_anchors` (priority 32, Lenient and above): Weisfeiler-Leman color-refinement structural fingerprint. Catches structurally identical subtrees across renames.
-- `embedding_anchors` (priority 20, feature-gated `lm_embeddings`): `Embedder` trait plus cosine similarity. Only active when the `lm_embeddings` feature is compiled in.
+In priority order (highest first):
 
-Post-processing: `adjust_anchors_by_required_sets` boosts required-to-required pairings as a tiebreak. When auto-generation surfaces unexpected pairings, inspect which strategy fired at which priority to understand the outcome.
+| Tag | Tier | What it pairs |
+|-----|------|---------------|
+| `user_hint` | every | Anchors declared in the `HintSpec`. Always wins. |
+| `exact` | every | Exact ID equality across source and target. |
+| `exact_suffix` | every | Terminal dot-segment equality for namespaced IDs. Catches moves within a namespace. |
+| `edge_label` | every | Same-labeled edges between already-anchored endpoints. Catches field renames that preserve the label. |
+| `alias` | every | Declared aliases on either schema. |
+| `token_similarity` | Balanced+ | Token-set similarity on identifiers. |
+| `description_similarity` | Balanced+ | Token similarity on `description` metadata. Helps when human docs survive a rename. |
+| `type_signature` | Balanced+ | Identical kind / arity / format signatures. |
+| `wrap_unwrap` | Balanced+ | Wrapping or unwrapping a single-field record. |
+| `coerce` | Balanced+ | Cross-kind coerce witnesses gated by the theory's directed equations. Pre-filtered by `AutoLensConfig.coercion_law_registry` when set. |
+| `neighborhood` | Lenient+ | Seeded child-pair scoring from confirmed anchors. |
+| `wl_refinement` | Lenient+ | Weisfeiler-Leman color refinement, a structural fingerprint that survives renames. |
+| `structural` | Lenient+ | Pure-graph isomorphism over residual unanchored components. |
+| `llm` | Exploratory, feature-gated | `Embedder` plus cosine similarity. Active only with the `lm_embeddings` feature. |
+
+Post-processing: `adjust_anchors_by_required_sets` boosts required-to-required pairings as a tiebreak. When auto-generation surfaces unexpected pairings, inspect the `alignmentStrategies` summary to see which strategy fired at which priority, then escalate to a `HintSpec` if the wrong one won.
 
 ### Coercion law honesty (0.38.0+)
 
@@ -148,7 +160,9 @@ Before synthesizing a migration that relies on coerce anchors, run the sample-ba
 schema theory check-coercion-laws theory.ncl --json
 ```
 
-The checker falsifies dishonest `Iso` and `Retraction` declarations against representative samples per `ValueKind`. A dishonest `Iso` that survives into a migration corrupts the asymmetric-lens put law silently; a failing sample here saves thousands of records downstream. When advising on a migration that touches coercions, recommend running the checker first and, for the auto-lens path, enabling `AutoLensConfig.coercion_law_registry` so the CSP pre-excludes coerce anchors whose declared class is falsifiable.
+The checker falsifies dishonest `Iso` and `Retraction` declarations against representative samples per `ValueKind`. A dishonest `Iso` that survives into a migration corrupts the asymmetric-lens put law silently; a failing sample here saves thousands of records downstream. When advising on a migration that touches coercions, recommend running the checker first and, for the auto-lens path, enabling `AutoLensConfig.coercion_law_registry` so the CSP pre-excludes coerce anchors whose declared class is falsifiable. Pair the registry with `FilterOptions::with_unknown(UnknownSamplesPolicy::Drop)` when the team is willing to reject any coerce anchor whose source `ValueKind` has no registered samples; the default `Keep` policy is more permissive and matches pre-0.38 behavior.
+
+Service-mediated callers (a federated panproto node, an MCP host, the playground) can drive the same checker through the `dev.panproto.translate.verifyCoercionLaws` lexicon (0.39.0+); recommend it when the toolchain is not Rust.
 
 ### Naturality-aware span exclusion (0.38.0+)
 
