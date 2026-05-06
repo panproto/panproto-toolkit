@@ -116,6 +116,29 @@ let errors = panproto_schema::validate(&schema, &proto);
 let normalized = panproto_schema::normalize(&schema);
 ```
 
+#### Theory → Schema bridge: `Protocol::from_theories` (0.42.0+)
+
+If you've built a `Theory` directly (via `Theory::new`, the `class!` /
+`inductive!` macros, or `panproto-theory-dsl`), `Protocol::from_theories`
+is the bridge to a `SchemaBuilder`:
+
+```rust
+use panproto_schema::Protocol;
+
+let proto = Protocol::from_theories(
+    "my_protocol",
+    schema_theory,                       // Theory or theory name
+    instance_theory,                     // Option<Theory>
+    obj_kinds.iter().map(String::as_str).collect(),
+)?;
+
+let schema = proto.schema()
+    .vertex("root", "object", None)?
+    .build()?;
+```
+
+The Python equivalent is `panproto.Protocol.from_theories(...)`. Closes the gap between hand-rolled theories and `Repository.add` / `parse_with_protocol`.
+
 ### panproto_inst (Level 2: instances)
 
 ```rust

@@ -158,23 +158,62 @@ result = panproto.eval_with_instance(expr, instance, schema)
 ### GAT operations (advanced)
 
 ```python
-# Create a theory
-theory = panproto.create_theory(
-    name="MyTheory",
-    sorts=[...],
-    ops=[...],
-    eqs=[...]
+# Create a theory from a dict spec
+theory = panproto.create_theory({
+    "name": "MyTheory",
+    "sorts": [...],
+    "ops": [...],
+    "eqs": [...],
+})
+
+# Or build incrementally (0.45.0+) with the fluent TheoryBuilder.
+# Mirrors SchemaBuilder / MigrationBuilder.
+theory = (
+    panproto.TheoryBuilder("upt")
+    .sort("pitch")
+    .sort("interval")
+    .op("transpose", ["pitch", "interval"], "pitch", input_names=["p", "i"])
+    .op("zero", [], "interval")
+    .eq("transpose_zero", "transpose(p, zero())", "p")
+    .build()
 )
 
 # Compose theories via colimit
-composed = panproto.colimit(theory_a, theory_b, shared)
+composed = panproto.colimit_theories(theory_a, theory_b, shared)
 
 # Check a morphism
-valid = panproto.check_morphism(morphism)
+panproto.check_morphism(morphism, domain, codomain)
 
 # Migrate a model
-migrated = panproto.migrate_model(model, morphism)
+migrated = panproto.migrate_model(morphism, model)
 ```
+
+#### Loading theories from text (0.44.0+)
+
+The `panproto-theory-dsl` JSON / YAML / Nickel surface is reachable
+from Python through classmethods on `Theory`. Accepted body variants
+are `theory`, `class`, and `inductive`; multi-output variants
+(`morphism`, `composition`, `protocol`, `bundle`, `instance`) raise
+`GatError` and need the DSL crate directly.
+
+```python
+# String-based loaders
+theory = panproto.Theory.from_json(json_text)
+theory = panproto.Theory.from_yaml(yaml_text)
+theory = panproto.Theory.from_nickel(ncl_text, import_paths=["./vendored"])
+
+# Path-based dispatcher (auto-detects extension)
+theory = panproto.Theory.from_path("theories/stlc.json")
+
+# Flat-shape round-trip (panproto_gat::Theory serde shape)
+emitted = theory.to_json()
+recovered = panproto.Theory.from_dict_json(emitted)
+```
+
+The `TheoryBuilder` and the JSON / YAML / Nickel loaders all accept
+the dependent-sort surface (`"Tm(arrow(a, b))"`) on the same footing
+as the Rust `class!` macro — they share the
+`panproto-theory-dsl::compile_theory::parse_term` term parser.
 
 ### Version control
 
@@ -204,6 +243,46 @@ schema = registry.parse_source_file("src/main.ts")
 # Parse a project directory
 project = panproto.parse_project("./src")
 ```
+
+#### Companion grammar packs (0.45.0+)
+
+The published `panproto` wheel ships only the eleven `group-core`
+grammars (Python, JavaScript, TypeScript, Java, C#, C++, PHP, Bash, C,
+Go, Rust). The remaining ~250 grammars live in separately-installable
+companion wheels, one pack per `panproto-grammars` group:
+
+| Wheel | Languages |
+|-------|-----------|
+| `panproto-grammars-web` | HTML, CSS, JavaScript, TypeScript, TSX, JSON, Vue, Svelte, Astro, GraphQL |
+| `panproto-grammars-systems` | C, C++, Rust, Go, Zig, D, Nim, Odin, V, Hare |
+| `panproto-grammars-jvm` | Java, Kotlin, Scala, Groovy, Clojure |
+| `panproto-grammars-scripting` | Python, Ruby, Lua, Bash, Perl, R, Julia, Nushell, Fish |
+| `panproto-grammars-data` | JSON, TOML, XML, YAML, SQL, CSV, GraphQL, Protobuf |
+| `panproto-grammars-functional` | Haskell, OCaml, Elm, Gleam, Erlang, Elixir, PureScript, F#, Clojure, Scheme, Racket |
+| `panproto-grammars-devops` | Dockerfile, Terraform, HCL, Nix, Bash, YAML, TOML, Make, CMake |
+| `panproto-grammars-mobile` | Swift, Kotlin, Dart, Java, Objective-C |
+| `panproto-grammars-music` | SuperCollider, LilyPond, ABC, Csound, ChucK, Glicol, Tidal mini-notation, Strudel mini-notation |
+| `panproto-grammars-all` | every grammar in `panproto-grammars` |
+
+Install whichever group you need:
+
+```bash
+pip install panproto-grammars-functional
+```
+
+There is nothing to import from these packages. They register a
+`panproto.grammars` setuptools entry point on installation;
+`panproto.AstParserRegistry()` walks every such entry point and
+threads the discovered grammar metadata into the native registry on
+construction. The native class is reachable as
+`panproto._native.AstParserRegistry()` for callers who want only the
+`group-core` baseline (e.g. when reproducing a fixed-grammar build).
+
+Cross-cdylib transport uses raw FFI pointers cast to integers; the
+trust boundary lives in `panproto-py` with one `unsafe` block. A
+single broken grammar (e.g. an upstream `node-types.json` with a
+malformed entry) is skipped with a `RuntimeWarning` rather than
+failing the whole construction.
 
 ### Git bridge
 

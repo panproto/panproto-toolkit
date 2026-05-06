@@ -115,6 +115,23 @@ schema parse emit src/index.ts --target-language python
 
 Exact round-trip works because interstitial text (keywords, operators, whitespace, comments) is captured as constraints on the schema vertices. The emitter reconstructs the source from these constraints plus the AST structure.
 
+### De novo emission via `emit_pretty` (0.40.0+)
+
+`AstParser::emit_pretty` is a generic walker over the language's tree-sitter `grammar.json` production rules. Given a schema produced by hand or by migration (no parse-history bytes attached), it renders source text by traversing the production graph: `STRING` and `PATTERN` emit literally, `SYMBOL` recurses, `BLANK` is empty, `SEQ` concatenates children, `CHOICE` dispatches cursor-first against unconsumed children (taking the first alternative whose head matches), `REPEAT` repeats while children remain, `OPTIONAL` consumes when matchable, `FIELD`/`ALIAS`/`TOKEN`/`PREC*` are transparent. Hidden rules inline.
+
+This is what makes by-construction schemas (e.g. the output of a migration) renderable without a CST complement. `panproto-grammars` ships `grammar.json` alongside `node-types.json` and `parser.c` for all 250 vendored grammars; `tools/fetch-grammar-json.py` populates the missing ones from upstream `tree-sitter-*` repos.
+
+### `ParseEmitLens` (0.40.0+)
+
+`panproto_parse::parse_emit_lens` packages the per-language parse / emit pair as an asymmetric `Lens<bytes, schema>`. Forward goes through the language's parser; backward through `emit_pretty`. Two laws are machine-checkable on concrete inputs:
+
+| Law | Function | What it asserts |
+|-----|----------|-----------------|
+| EmitParse retraction | `check_emit_parse(schema)` | `parse(emit(s)) ≅ s` modulo byte positions |
+| ParseEmit stability | `check_parse_emit(bytes)` | `emit(parse(b)) == b` byte-for-byte when `b` is parseable |
+
+Structural equivalence in EmitParse is witnessed by a pair of multisets: `kind_multiset` (vertex kinds) and `edge_multiset` (`(src_kind, edge_kind, tgt_kind)` triples). The vertex multiset alone doesn't distinguish a tree from its mirror, so the edge witness carries weight. The `strip_complement` helper removes byte-position constraints while preserving the choice discriminators the walker recorded at parse time, which is what makes the retraction tight rather than approximate.
+
 ## Auto-derived theories
 
 Each language's grammar automatically generates a schema theory.

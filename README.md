@@ -1,6 +1,6 @@
 # panproto-toolkit
 
-> Written for panproto v0.38.0. See [keeping up to date](#keeping-up-to-date) for version tracking.
+> Written for panproto v0.45.0. See [keeping up to date](#keeping-up-to-date) for version tracking.
 
 Claude Code skills, agents, MCP server, project templates, and CI integrations for working with [panproto](https://github.com/panproto/panproto), the schematic version control engine.
 
@@ -46,7 +46,8 @@ Invoke any skill in Claude Code with `/panproto-<name>`.
 | **query-instances** | `/panproto-query-instances` | Query and filter instances with predicates and projections |
 | **cross-protocol** | `/panproto-cross-protocol` | Cross-protocol translation with loss analysis |
 | **build-protocol** | `/panproto-build-protocol` | Define custom protocols by composing building-block theories |
-| **full-ast-parsing** | `/panproto-full-ast-parsing` | Parse 248 programming languages via tree-sitter |
+| **full-ast-parsing** | `/panproto-full-ast-parsing` | Parse ~250 programming languages via tree-sitter; `emit_pretty` and `ParseEmitLens` for round-trip emission |
+| **companion-grammar-packs** | `/panproto-companion-grammar-packs` | spaCy-style pip-installable grammar packs (0.45.0+): one per `panproto-grammars` group |
 | **typeclasses** | `/panproto-typeclasses` | Class / instance DSL bodies and the `class!`/`instance!`/`derive_theory!` proc-macros |
 | **rewriting** | `/panproto-rewriting` | Directed equations, Knuth-Bendix confluence, LPO termination, normalization |
 | **implicit-arguments** | `/panproto-implicit-arguments` | `Implicit::Yes` tag, Robinson unification at call sites, when to mark a parameter implicit |

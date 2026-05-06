@@ -12,7 +12,14 @@ You are helping a user work with `panproto-repl`, the interactive shell introduc
 
 ## Installation
 
-`panproto-repl` ships as its own crate and its own binary. `cargo install panproto-repl` puts the `panproto-repl` binary on your path. The toolkit templates do not invoke it automatically; it is an interactive tool you run by hand.
+As of panproto 0.42.0 the REPL is integrated into the `schema` CLI: invoke it as `schema theory repl`. The standalone `panproto-repl` binary was removed; the engine remains as a library (the `panproto-repl` crate) consumed by `panproto-cli`. `schema expr repl` (the expression-language REPL) uses the same rustyline driver, so syntax highlighting, persistent history, and tab-completion of `:command` names behave identically across the two surfaces.
+
+```sh
+schema theory repl              # interactive theory-layer shell
+schema theory repl path.ncl     # preload a document
+```
+
+If you're on a panproto release earlier than 0.42.0 and have the standalone binary on PATH, `panproto-repl` is the older entry point; the command set is identical.
 
 ## Commands
 

@@ -42,7 +42,7 @@ Add to `.vscode/settings.json`:
 
 ## Tools (31)
 
-Tool descriptions are accurate against panproto 0.38.0. The theory tools (`panproto_theory_validate`, `panproto_theory_compile`) handle the `class`, `instance`, and `inductive` document body types in addition to `theory`, `morphism`, `composition`, and `protocol`. New in 0.12.0: `panproto_theory_check_coercion_laws` wraps the sample-based coercion law verifier for CI gates. Confluence and termination analyses are available via the library API (`panproto_gat::rewriting`) but are not yet exposed as CLI verbs, so the MCP server does not wrap them.
+Tool descriptions are accurate against panproto 0.45.0. The theory tools (`panproto_theory_validate`, `panproto_theory_compile`) handle the `class`, `instance`, and `inductive` document body types in addition to `theory`, `morphism`, `composition`, and `protocol`. The class / inductive / derive_theory document bodies (and the matching Rust proc-macros) accept dependent sorts in argument and output positions as of panproto 0.44.0; the same surface is exposed in Python as `panproto.TheoryBuilder` (0.45.0) and through the panproto-theory-dsl loaders (`Theory.from_json` / `from_yaml` / `from_nickel` / `from_path`, also 0.44.0). The 0.38.0 coercion-law-verifier is wrapped by `panproto_theory_check_coercion_laws`. Confluence and termination analyses are available via the library API (`panproto_gat::rewriting`) but are not yet exposed as CLI verbs, so the MCP server does not wrap them.
 
 ### Schema
 | Tool | Description |

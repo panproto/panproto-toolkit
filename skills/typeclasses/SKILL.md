@@ -35,6 +35,43 @@ A class body declares a carrier sort plus operations and equations over that car
 
 Use the proc-macros when the theory lives alongside Rust code and you want `cargo check` to catch morphism violations. Use DSL documents when the theory is data, lives under version control, or is consumed by non-Rust tooling.
 
+#### Dependent sorts in macro signatures (0.44.0+)
+
+`class!`, `inductive!`, and `derive_theory!` accept dependent sorts in
+argument and output positions, mirroring the JSON / YAML / Nickel
+surface from `panproto-theory-dsl`. A simply-typed lambda calculus,
+for example, can now be expressed directly as a `class!` body:
+
+```rust
+class! {
+    StlcMacro<Ctx, Ty, Tm> {
+        arrow(a: Ty, b: Ty) -> Ty;
+        extend(g: Ctx, a: Ty) -> Ctx;
+        emptyCtx() -> Ctx;
+
+        var_zero(g: Ctx, a: Ty) -> Tm(extend(g, a), a);
+        lam(g: Ctx, a: Ty, b: Ty, body: Tm(extend(g, a), b)) -> Tm(g, arrow(a, b));
+        app(g: Ctx, a: Ty, b: Ty, f: Tm(g, arrow(a, b)), x: Tm(g, a)) -> Tm(g, b);
+        subst(g: Ctx, a: Ty, b: Ty, body: Tm(extend(g, a), b), x: Tm(g, a)) -> Tm(g, b);
+
+        axiom beta:
+            app(g, a, b, lam(g, a, b, body), x) = subst(g, a, b, body, x);
+    }
+}
+```
+
+The macro grammar is `Ident: SortExpr` where `SortExpr := Ident ('('
+Term,* ')')?` and `Term := Ident ('(' Term,* ')')?`. Bare identifiers
+keep compiling to `SortExpr::Name`; applied identifiers compile to
+`SortExpr::App` with `Term::Var` / `Term::App` arguments. All three
+macros — `class!`, `inductive!`, `derive_theory!` — route through the
+`SortExpr::app` smart constructor, so simple-sort callers produce
+byte-identical output to the pre-0.44 macro.
+
+The same dependent-sort surface is reachable from Python via
+`panproto.TheoryBuilder` and `Theory.from_json` / `from_yaml` /
+`from_nickel` — see the sdk-python skill.
+
 ## Typical workflow
 
 1. Identify a reusable algebraic interface (monoid, functor, ordered set, numeric tower).

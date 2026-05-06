@@ -12,8 +12,8 @@ importers:
         specifier: ^1.0.0
         version: 1.29.0(zod@4.3.6)
       '@panproto/core':
-        specifier: ^0.36.0
-        version: 0.36.0
+        specifier: ^0.45.0
+        version: 0.45.0
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -203,8 +203,8 @@ packages:
     resolution: {integrity: sha512-47XIizs9XZXvuJgoaJUIE2lFoID8ugvc0jzSHP+Ptfk8nTbnR8g788wv48N03Kx0UkAv559HWRQ3yzOgzlRNUA==}
     engines: {node: '>= 18'}
 
-  '@panproto/core@0.36.0':
-    resolution: {integrity: sha512-XTxzgQZX21igigVcwjHjGW/BfgqZUzkt0BtrnQzzLgrk5flPSeY5BPdyy/Ba3+6l+1nMmd9h5uIVotXBFi27qg==}
+  '@panproto/core@0.45.0':
+    resolution: {integrity: sha512-dX8lYRaklr+4vNG6XEi8wRDlse5tYyfrk9nicAbq4VqTt0IO9NGxAX744xr314ZrmIYyqg3AyPxeFJl3o70/ig==}
     engines: {node: '>=20'}
 
   '@types/node@22.19.17':
@@ -697,7 +697,7 @@ snapshots:
 
   '@msgpack/msgpack@3.1.3': {}
 
-  '@panproto/core@0.36.0':
+  '@panproto/core@0.45.0':
     dependencies:
       '@msgpack/msgpack': 3.1.3
 

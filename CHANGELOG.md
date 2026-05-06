@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.13.0] - 2026-05-06
+
+Catches the toolkit up across six panproto releases (v0.40.0 → v0.45.0). Last refresh was for v0.39.0; this release covers `emit_pretty` / `ParseEmitLens` (0.40), the Haskell binding (0.41), the Theory→Schema bridge and CLI-integrated REPL (0.42), the dependent-sort surface in `class!` / `inductive!` / `derive_theory!` (0.44), `Theory.from_json` / `from_yaml` / `from_nickel` and `panproto.TheoryBuilder` on the Python SDK (0.44 / 0.45), and the spaCy-style companion grammar packs (0.45).
+
+### Added
+
+- **`skills/companion-grammar-packs`**: new skill covering the ten pip-installable companion wheels (`panproto-grammars-{web,systems,jvm,scripting,data,functional,devops,mobile,music,all}`). Documents the entry-point discovery mechanism, the cross-cdylib FFI transport (raw `*const TSLanguage` pointers cast to integers; trust boundary on `panproto-py`), the per-process leaked-metadata cache, and the `aarch64-unknown-linux-gnu` × `panproto-grammars-all` gap from upstream issue [#85](https://github.com/panproto/panproto/issues/85).
+- `skills/sdk-python` now covers `panproto.TheoryBuilder` (fluent theory construction, mirroring `SchemaBuilder` / `MigrationBuilder`), `Theory.from_json` / `from_yaml` / `from_nickel` / `from_path` / `from_dict_json` / `to_json` (the `panproto-theory-dsl` loaders surfaced on the Python SDK in 0.44.0), and the companion-grammar-pack table (0.45.0).
+- `skills/typeclasses`: dependent sorts in `class!`, `inductive!`, and `derive_theory!` argument and output positions (0.44.0). Surface grammar `Ident: SortExpr` where `SortExpr := Ident ('(' Term,* ')')?`. Includes a worked STLC example whose argument and output sorts are dependent (`Tm(extend(g, a), b)`, `Tm(g, arrow(a, b))`).
+- `skills/full-ast-parsing`: section on `AstParser::emit_pretty`, the generic `grammar.json` walker (0.40.0), and `panproto_parse::parse_emit_lens` packaging the parse / emit pair as an asymmetric `Lens<bytes, schema>`. Documents the `EmitParse` retraction (`check_emit_parse`) and `ParseEmit` stability law (`check_parse_emit`), with the multiset witnesses (`kind_multiset` + `edge_multiset`) and `strip_complement`.
+- `skills/sdk-rust`: section on `panproto_schema::Protocol::from_theories` (0.42.0), the bridge from a hand-rolled `Theory` (or theory name) to a `SchemaBuilder` ready for `Repository::add` and `parse_with_protocol`. Same surface is reachable as `panproto.Protocol.from_theories` from Python.
+- `skills/repl`: `schema theory repl` (0.42.0+) integration. The standalone `panproto-repl` binary was removed; the engine is now consumed by `panproto-cli` through a shared rustyline driver also used by `schema expr repl`. Syntax highlighting, persistent history, and tab-completion of `:command` names behave identically across both REPL surfaces.
+
+### Changed
+
+- `mcp-server`: `@panproto/core` dependency bumped from `^0.39.0` to `^0.45.0`. Server version bumped from `0.12.1` to `0.13.0`.
+- `templates/python-project`: `panproto>=0.39.0` → `panproto>=0.45.0`.
+- `templates/ts-project`: `@panproto/core ^0.39.0` → `^0.45.0`.
+- `templates/rust-project`: `panproto-core 0.39.0` → `0.45.0`.
+- `mcp-server/README.md`: tool-description accuracy line bumped to 0.45.0; explicit note that the `class` / `inductive` / `derive_theory` surface accepts dependent sorts as of 0.44.0 and that `panproto.TheoryBuilder` plus `Theory.from_json` / `from_yaml` / `from_nickel` are the Python-side equivalents.
+- `README.md`: header bumped to "Written for panproto v0.45.0".
+
+### Deferred
+
+- A standalone `skills/parse-emit-lens` skill is left for a future release; the `full-ast-parsing` skill subsumes it well enough at the current depth, and a dedicated skill would duplicate content. Will revisit if the `ParseEmitLens` surface grows.
+- `skills/haskell-binding` (panproto 0.41.0's `panproto-c` + cabal package) is not added in this release. The Haskell binding's audience is small relative to the existing skills; the v0.41.0 bluesky thread covers the launch and the panproto repo's `bindings/haskell/README.md` is the authoritative consumer reference. Will add a skill if downstream Haskell users surface concrete tooling needs.
+- No new MCP tool wraps `panproto.Protocol.from_theories` directly; the existing `panproto_theory_compile` covers the `protocol` document body which is the analogous CLI-side path. A dedicated `panproto_protocol_from_theories` would be useful but waits for downstream demand.
+
 ## [0.12.1] - 2026-04-25
 
 Updated for panproto v0.39.0 (lexicon-only release surfacing features that accumulated since 0.36: Merkle-tree per-file schema content addressing, the full 14-strategy alignment ladder, sample-based coercion-law verification with `FilterOptions`, and richer commit records).
