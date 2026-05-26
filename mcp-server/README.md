@@ -1,6 +1,6 @@
 # @panproto/mcp-server
 
-MCP (Model Context Protocol) server for panproto, exposing schema migration operations to Claude Desktop, VS Code, and other MCP-compatible clients.
+MCP ([Model Context Protocol](https://modelcontextprotocol.io/)) server for [panproto](https://github.com/panproto/panproto), exposing 72 schema operations to Claude Desktop, VS Code, and other MCP-compatible clients. Every tool is classified by risk, annotated with MCP tool hints, and destructive operations gate on user approval.
 
 ## Installation
 
@@ -8,7 +8,13 @@ MCP (Model Context Protocol) server for panproto, exposing schema migration oper
 npm install -g @panproto/mcp-server
 ```
 
-Requires the `schema` CLI to be installed and available on `$PATH`.
+Requires the `schema` CLI to be installed and available on `$PATH`:
+
+```sh
+brew install panproto/tap/panproto-cli
+# or
+cargo install panproto-cli
+```
 
 ## Configuration
 
@@ -40,103 +46,200 @@ Add to `.vscode/settings.json`:
 }
 ```
 
-## Tools (31)
+## Security and approvals
 
-Tool descriptions are accurate against panproto 0.45.0. The theory tools (`panproto_theory_validate`, `panproto_theory_compile`) handle the `class`, `instance`, and `inductive` document body types in addition to `theory`, `morphism`, `composition`, and `protocol`. The class / inductive / derive_theory document bodies (and the matching Rust proc-macros) accept dependent sorts in argument and output positions as of panproto 0.44.0; the same surface is exposed in Python as `panproto.TheoryBuilder` (0.45.0) and through the panproto-theory-dsl loaders (`Theory.from_json` / `from_yaml` / `from_nickel` / `from_path`, also 0.44.0). The 0.38.0 coercion-law-verifier is wrapped by `panproto_theory_check_coercion_laws`. Confluence and termination analyses are available via the library API (`panproto_gat::rewriting`) but are not yet exposed as CLI verbs, so the MCP server does not wrap them.
+Every tool is classified by risk level and annotated with MCP `ToolAnnotations` (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`).
 
-### Schema
+### Risk tiers
+
+| Tier | Count | Approval | Examples |
+|------|-------|----------|----------|
+| **Read-only** | 47 | Auto-approved | validate, diff, log, parse_file, eval_expr |
+| **Write-additive** | 10 | Auto-approved | init, add, commit, branch_create, enrich_add_default |
+| **Write-destructive** | 15 | Requires user confirmation | merge, rebase, reset, batch_migrate, git_import |
+
+### Approval flow
+
+For destructive operations, the server uses MCP elicitation (`elicitation/create` with `form` mode) to request explicit user confirmation before executing. The user sees what will happen and can accept, decline, or cancel.
+
+If the MCP client does not support elicitation, the tool returns a warning and requires a `confirmed: true` parameter on re-call.
+
+### Audit log
+
+Every tool invocation is recorded in a session-scoped, append-only audit log with timestamp, tool name, risk level, arguments, approval status, result, and duration. Inspect the log via the `panproto_session_audit` tool.
+
+## Tools (72)
+
+Tool descriptions are accurate against panproto v0.50.3. All tools are registered via `registerTool` with deterministic alphabetical ordering for LLM prompt cache consistency.
+
+### Schema (6)
+
 | Tool | Description |
 |------|-------------|
 | `panproto_validate` | Validate a schema against a protocol |
-| `panproto_normalize` | Canonicalize a schema |
-| `panproto_scaffold` | Generate test data from protocol theory |
-| `panproto_typecheck` | Type-check a migration at the GAT level |
-| `panproto_health` | Check CLI installation and version |
+| `panproto_normalize` | Canonicalize a schema (collapse refs, merge equivalent elements via `--identify`) |
+| `panproto_scaffold` | Generate test data from protocol theory via free model construction |
+| `panproto_typecheck` | Type-check a migration morphism at the GAT level |
+| `panproto_verify` | Verify that a schema satisfies all equations in the protocol theory |
+| `panproto_health` | Check CLI installation and version (returns structured output) |
 
-### Theory
+### Theory (6)
+
 | Tool | Description |
 |------|-------------|
-| `panproto_theory_validate` | Validate a theory document (load + typecheck) |
-| `panproto_theory_compile` | Compile a theory document to theories / morphisms / protocols |
+| `panproto_theory_validate` | Validate a theory document (theory, morphism, composition, protocol, class, instance, inductive bodies) |
+| `panproto_theory_compile` | Compile a theory document to theories, morphisms, and protocols |
 | `panproto_theory_compile_dir` | Compile every theory document in a directory |
 | `panproto_theory_check_morphism` | Validate a theory morphism document |
 | `panproto_theory_recompose` | Replay a composition and print the resulting theory |
-| `panproto_theory_check_coercion_laws` | Sample-based verification of declared coercion laws (0.38.0+) |
+| `panproto_theory_check_coercion_laws` | Sample-based verification of declared Iso/Retraction/Projection/Opaque coercion laws |
 
-### Migration
+### Migration (4)
+
 | Tool | Description |
 |------|-------------|
-| `panproto_check_existence` | Check migration existence conditions |
-| `panproto_lift` | Apply migration to a data record |
-| `panproto_auto_migrate` | Discover a migration via CSP search |
-| `panproto_integrate` | Compute pushout of two schemas |
+| `panproto_check_existence` | Check migration existence conditions between two schemas |
+| `panproto_lift` | Apply migration to a data record (restrict/sigma/pi directions) |
+| `panproto_auto_migrate` | Discover a migration via the 14-strategy alignment ladder |
+| `panproto_integrate` | Compute pushout (integration) of two schemas with universal-property verification |
 
-### Diff
+### Diff (2)
+
 | Tool | Description |
 |------|-------------|
-| `panproto_diff` | Structural diff with rename detection |
-| `panproto_classify` | Classify change compatibility |
+| `panproto_diff` | Structural diff with rename detection and optic-kind classification |
+| `panproto_classify` | Classify schema change as compatible, backward-compatible, or breaking |
 
-### Lens
+### Lens (7)
+
 | Tool | Description |
 |------|-------------|
-| `panproto_lens_generate` | Auto-generate a protolens chain |
-| `panproto_lens_apply` | Apply lens (forward or backward) |
-| `panproto_lens_verify` | Verify round-trip laws |
-| `panproto_lens_compose` | Compose two chains |
-| `panproto_lens_inspect` | Inspect chain steps and effects |
+| `panproto_lens_generate` | Auto-generate a protolens chain with stringency tiers, ranked candidates, and explanations |
+| `panproto_lens_apply` | Apply a protolens chain (forward or backward with complement) |
+| `panproto_lens_verify` | Verify GetPut, PutGet, and PutPut round-trip laws on test data |
+| `panproto_lens_compose` | Compose two protolens chains via vertical composition |
+| `panproto_lens_inspect` | Inspect chain steps, preconditions, effects, and optic kind |
+| `panproto_lens_check` | Check whether a chain is applicable against a set of schemas |
+| `panproto_lens_lift` | Lift a protolens chain along a theory morphism |
 
-### Data
+### Data (4)
+
 | Tool | Description |
 |------|-------------|
-| `panproto_convert` | Convert data between schemas |
-| `panproto_batch_migrate` | Migrate a directory via VCS history |
-| `panproto_data_status` | Report data staleness |
+| `panproto_convert` | Convert data between schemas using protolens chains |
+| `panproto_batch_migrate` | Migrate a directory of data files via VCS history (supports `--dry-run`) |
+| `panproto_data_status` | Report data staleness relative to the current schema version |
+| `panproto_data_sync` | Sync data to target schema via VCS, optionally recording edit logs |
 
-### Parse
+### Parse (3)
+
 | Tool | Description |
 |------|-------------|
-| `panproto_parse_file` | Parse source file (248 languages) |
-| `panproto_parse_project` | Parse directory into project schema |
-| `panproto_parse_emit` | Round-trip parse and emit |
+| `panproto_parse_file` | Parse a source file into a schema (259 languages via tree-sitter) |
+| `panproto_parse_project` | Parse all files in a directory into a unified project schema |
+| `panproto_parse_emit` | Round-trip parse and emit (verified via the parse/decorate/emit lens) |
 
-### Expression
+### Expression (6)
+
 | Tool | Description |
 |------|-------------|
-| `panproto_eval_expr` | Evaluate an expression |
-| `panproto_parse_expr` | Parse expression to AST |
-| `panproto_fmt_expr` | Pretty-print expression |
+| `panproto_eval_expr` | Evaluate a panproto expression (59 builtins: arithmetic, string, list, record, graph traversal) |
+| `panproto_parse_expr` | Parse an expression and print its AST |
+| `panproto_fmt_expr` | Pretty-print an expression in canonical form |
+| `panproto_check_expr` | Check expression syntax without evaluation |
+| `panproto_gat_eval` | Evaluate a GAT term from a JSON file |
+| `panproto_gat_check` | Type-check a GAT term (dependent sort resolution) |
 
-### VCS
+### VCS read (10)
+
 | Tool | Description |
 |------|-------------|
-| `panproto_vcs_status` | Show VCS status |
-| `panproto_vcs_log` | Show commit history |
-| `panproto_vcs_diff` | Diff schema versions |
-| `panproto_vcs_blame` | Attribute elements to commits |
+| `panproto_vcs_status` | Show staged, modified, untracked schema files |
+| `panproto_vcs_log` | Show commit history (supports `--graph`, `--author`, `--grep`, `--data`) |
+| `panproto_vcs_diff` | Diff schema versions (supports `--theory`, `--lens`, `--optic-kind`) |
+| `panproto_vcs_blame` | Show which commit introduced a specific schema element |
+| `panproto_vcs_show` | Inspect a commit, schema, or content-addressed object |
+| `panproto_vcs_reflog` | Show ref mutation history |
+| `panproto_vcs_bisect` | Binary search for the commit that introduced a breaking change |
+| `panproto_vcs_branch_list` | List all branches |
+| `panproto_vcs_tag_list` | List all tags |
+| `panproto_vcs_stash_list` | List stash entries |
 
-### Enrichment
+### VCS write (16)
+
+| Tool | Risk | Description |
+|------|------|-------------|
+| `panproto_vcs_init` | additive | Initialize a panproto repository |
+| `panproto_vcs_add` | additive | Stage a schema (with optional `--data`, `--dry-run`) |
+| `panproto_vcs_commit` | additive | Create a commit from staged schemas |
+| `panproto_vcs_branch_create` | additive | Create a branch |
+| `panproto_vcs_tag_create` | additive | Create a tag (plain or annotated) |
+| `panproto_vcs_stash_push` | additive | Save working state to stash |
+| `panproto_vcs_checkout` | destructive | Switch branches or commits |
+| `panproto_vcs_merge` | destructive | Merge via pushout-based schema integration |
+| `panproto_vcs_rebase` | destructive | Rebase (rewrites commit history) |
+| `panproto_vcs_cherry_pick` | destructive | Apply a single commit from another branch |
+| `panproto_vcs_reset` | destructive | Move HEAD (`--soft` or `--hard`) |
+| `panproto_vcs_stash_pop` | destructive | Apply and remove the most recent stash |
+| `panproto_vcs_branch_delete` | destructive | Delete a branch |
+| `panproto_vcs_tag_delete` | destructive | Delete a tag |
+| `panproto_vcs_gc` | destructive | Garbage collect unreachable objects |
+
+### Enrichment (6)
+
+| Tool | Risk | Description |
+|------|------|-------------|
+| `panproto_enrich_add_default` | additive | Add default value expression to a vertex |
+| `panproto_enrich_add_coercion` | additive | Add coercion between vertex kinds |
+| `panproto_enrich_add_merger` | additive | Add merger expression for conflict resolution |
+| `panproto_enrich_add_policy` | additive | Add conflict resolution policy |
+| `panproto_enrich_list` | read | List all enrichments on HEAD |
+| `panproto_enrich_remove` | destructive | Remove a named enrichment |
+
+### Git bridge (2)
+
+| Tool | Risk | Description |
+|------|------|-------------|
+| `panproto_git_import` | destructive | Import git history into panproto VCS |
+| `panproto_git_export` | destructive | Export panproto VCS to a git repository |
+
+### Audit (1)
+
 | Tool | Description |
 |------|-------------|
-| `panproto_enrich_add_default` | Add default value to a vertex |
-| `panproto_enrich_add_coercion` | Add type coercion expression |
-| `panproto_enrich_list` | List all enrichments |
+| `panproto_session_audit` | View the session audit log (returns structured output with entries and summary) |
 
 ## Resources (3)
 
-| URI | Description |
-|-----|-------------|
-| `panproto://protocols` | 50 protocol definitions |
-| `panproto://codecs` | 50+ I/O codecs |
-| `panproto://grammars` | 248 language parsers |
+| URI | Content |
+|-----|---------|
+| `panproto://protocols` | 50 protocol definitions + 19 annotation protocols |
+| `panproto://codecs` | 50+ I/O codecs organized by pathway (JSON/SIMD, XML/quick-xml, tabular/memchr, binary, graph, relational, config, domain) |
+| `panproto://grammars` | 259 language parsers via tree-sitter across 11 grammar groups |
 
-## Prompts (3)
+## Prompts (6)
 
 | Prompt | Description |
 |--------|-------------|
-| `migration-plan` | Plan a migration between two schemas |
+| `migration-plan` | Plan a migration between two schema versions |
 | `schema-review` | Review a schema for best practices |
 | `compatibility-report` | Analyze cross-protocol compatibility |
+| `vcs-workflow` | Guide through init, add, commit, branch, merge |
+| `cross-protocol-translation` | Translate data between two protocols |
+| `code-schema-diff` | Parse two source files, diff their schemas, generate a lens |
+
+## Architecture
+
+The server wraps the `schema` CLI via `execFile`. Each tool constructs the correct CLI arguments, and the policy engine intercepts destructive calls to request user approval via MCP elicitation.
+
+```
+MCP Client
+  └─ JSON-RPC (stdio)
+       └─ McpServer (registerTool, sorted alphabetically)
+            └─ PolicyEngine (classify → audit → elicit if destructive)
+                 └─ execFile("schema", [...args])
+                      └─ panproto CLI
+```
 
 ## Development
 
