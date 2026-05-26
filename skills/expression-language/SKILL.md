@@ -2,8 +2,9 @@
 name: expression-language
 description: >
   Reference guide for panproto's expression language. Covers literals, variables, field
-  access, ~50 builtins, lambda functions, pattern matching, list comprehensions, and
-  step/depth limits.
+  access, 59 builtins (arithmetic, string, list, record, comparison, boolean, type coercion,
+  type inspection, graph traversal), lambda functions, pattern matching, list comprehensions,
+  and step/depth limits.
 ---
 
 # Expression Language Reference

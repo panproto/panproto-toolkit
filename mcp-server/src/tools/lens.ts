@@ -1,121 +1,175 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { execCli, textContent, withErrorBoundary } from "../cli.js";
+import type { ToolDefinition } from "./types.js";
+import { TOOL_CATALOG } from "../policy/tool-catalog.js";
 
-export function registerLensTools(server: McpServer): void {
-  server.tool(
-    "panproto_lens_generate",
-    "Auto-generate a bidirectional protolens chain between two schemas. Supports Stringency tiers (strict/balanced/lenient/exploratory) to control which of the 14 alignment strategies (user_hint, exact, exact_suffix, edge_label, alias, token_similarity, description_similarity, type_signature, wrap_unwrap, coerce, neighborhood, wl_refinement, structural, llm) and sort coercions the search may use. Can return a ranked list of candidates with per-step confidences. Compiled migrations expose an alignmentStrategies summary (0.39.0+) keyed by these tags with anchorCount and meanConfidence.",
+export function lensTools(): ToolDefinition[] {
+  return [
     {
-      old_schema: z.string().describe("Path to old/source schema"),
-      new_schema: z.string().describe("Path to new/target schema"),
-      protocol: z.string().describe("Protocol name"),
-      json: z.boolean().optional().describe("Output as JSON"),
-      save: z.string().optional().describe("Save protolens chain to this file path"),
-      hints: z.string().optional().describe("Path to a HintSpec JSON file for guided auto-lens generation (anchors, scope constraints, exclusions, scoring preferences)"),
-      stringency: z.enum(["strict", "balanced", "lenient", "exploratory"]).optional().describe("Stringency tier controlling which alignment strategies and coercions are enabled (default: balanced)"),
-      top_n: z.number().int().positive().optional().describe("Return the top N ranked candidates instead of a single chain"),
-      explain: z.boolean().optional().describe("Include per-candidate human-readable explanations and strategy provenance"),
+      name: "panproto_lens_generate",
+      config: {
+        title: TOOL_CATALOG.panproto_lens_generate.title,
+        description: "Auto-generate a bidirectional protolens chain between two schemas. Supports stringency tiers (strict/balanced/lenient/exploratory) controlling which of the 14 alignment strategies and sort coercions the search may use. Can return ranked candidates with per-step confidences. Optic kinds (Iso, Lens, Prism, Affine, Traversal) are classified from the underlying TheoryTransform.",
+        inputSchema: z.object({
+          old_schema: z.string().describe("Path to old/source schema"),
+          new_schema: z.string().describe("Path to new/target schema"),
+          protocol: z.string().describe("Protocol name"),
+          json: z.boolean().optional().describe("Output as JSON"),
+          save: z.string().optional().describe("Save protolens chain to this file path"),
+          hints: z.string().optional().describe("Path to a HintSpec JSON file for guided auto-lens generation"),
+          stringency: z.enum(["strict", "balanced", "lenient", "exploratory"]).optional().describe("Stringency tier (default: balanced)"),
+          top_n: z.number().int().positive().optional().describe("Return the top N ranked candidates"),
+          explain: z.boolean().optional().describe("Include per-candidate explanations and strategy provenance"),
+          chain: z.boolean().optional().describe("Output as protolens chain format"),
+          try_overlap: z.boolean().optional().describe("Try overlap-based alignment when direct morphism fails"),
+          fuse: z.boolean().optional().describe("Fuse multi-step chain into single endofunctor"),
+          requirements: z.boolean().optional().describe("Show complement requirements"),
+          defaults: z.string().optional().describe("Comma-delimited key=value default values for added fields"),
+        }),
+        annotations: TOOL_CATALOG.panproto_lens_generate.annotations,
+      },
+      handler: withErrorBoundary(async ({ old_schema, new_schema, protocol, json, save, hints, stringency, top_n, explain, chain, try_overlap, fuse, requirements, defaults }) => {
+        const args = ["lens", "generate", "--protocol", protocol as string];
+        if (json) args.push("--json");
+        if (chain) args.push("--chain");
+        if (save) args.push("--save", save as string);
+        if (hints) args.push("--hints", hints as string);
+        if (stringency) args.push("--stringency", stringency as string);
+        if (top_n !== undefined) args.push("--top-n", String(top_n));
+        if (explain) args.push("--explain");
+        if (try_overlap) args.push("--try-overlap");
+        if (fuse) args.push("--fuse");
+        if (requirements) args.push("--requirements");
+        if (defaults) args.push("--defaults", defaults as string);
+        args.push(old_schema as string, new_schema as string);
+        const result = await execCli(...args);
+        return textContent(result);
+      }),
     },
-    withErrorBoundary(async ({ old_schema, new_schema, protocol, json, save, hints, stringency, top_n, explain }) => {
-      const args = ["lens", "generate", "--protocol", protocol];
-      if (json) args.push("--json");
-      if (save) args.push("--save", save);
-      if (hints) args.push("--hints", hints);
-      if (stringency) args.push("--stringency", stringency);
-      if (top_n !== undefined) args.push("--top-n", String(top_n));
-      if (explain) args.push("--explain");
-      args.push(old_schema, new_schema);
-      const result = await execCli(...args);
-      return textContent(result);
-    })
-  );
-
-  server.tool(
-    "panproto_lens_apply",
-    "Apply a protolens chain to data (forward or backward direction)",
     {
-      chain: z.string().describe("Path to protolens chain JSON file"),
-      data: z.string().describe("Path to data record"),
-      protocol: z.string().describe("Protocol name"),
-      direction: z.enum(["forward", "backward"]).optional().describe("Direction (default: forward)"),
-      complement: z.string().optional().describe("Path to complement data (for backward apply)"),
-      schema: z.string().optional().describe("Schema for chain instantiation"),
+      name: "panproto_lens_apply",
+      config: {
+        title: TOOL_CATALOG.panproto_lens_apply.title,
+        description: "Apply a protolens chain to data (forward or backward direction). Backward apply requires complement data from a previous forward apply.",
+        inputSchema: z.object({
+          chain: z.string().describe("Path to protolens chain JSON file"),
+          data: z.string().describe("Path to data record"),
+          protocol: z.string().describe("Protocol name"),
+          direction: z.enum(["forward", "backward"]).optional().describe("Direction (default: forward)"),
+          complement: z.string().optional().describe("Path to complement data (for backward apply)"),
+          schema: z.string().optional().describe("Schema for chain instantiation"),
+        }),
+        annotations: TOOL_CATALOG.panproto_lens_apply.annotations,
+      },
+      handler: withErrorBoundary(async ({ chain, data, protocol, direction, complement, schema }) => {
+        const args = ["lens", "apply", "--protocol", protocol as string];
+        if (direction) args.push("--direction", direction as string);
+        if (complement) args.push("--complement", complement as string);
+        if (schema) args.push("--schema", schema as string);
+        args.push(chain as string, data as string);
+        const result = await execCli(...args);
+        return textContent(result);
+      }),
     },
-    withErrorBoundary(async ({ chain, data, protocol, direction, complement, schema }) => {
-      const args = ["lens", "apply", "--protocol", protocol];
-      if (direction) args.push("--direction", direction);
-      if (complement) args.push("--complement", complement);
-      if (schema) args.push("--schema", schema);
-      args.push(chain, data);
-      const result = await execCli(...args);
-      return textContent(result);
-    })
-  );
-
-  server.tool(
-    "panproto_lens_verify",
-    "Verify lens round-trip laws (GetPut and PutGet) on test data",
     {
-      data: z.string().describe("Path to test data file"),
-      protocol: z.string().describe("Protocol name"),
-      schema: z.string().optional().describe("Path to schema file"),
+      name: "panproto_lens_verify",
+      config: {
+        title: TOOL_CATALOG.panproto_lens_verify.title,
+        description: "Verify lens round-trip laws (GetPut, PutGet, PutPut) on test data",
+        inputSchema: z.object({
+          data: z.string().describe("Path to test data file"),
+          protocol: z.string().describe("Protocol name"),
+          schema: z.string().optional().describe("Path to schema file"),
+        }),
+        annotations: TOOL_CATALOG.panproto_lens_verify.annotations,
+      },
+      handler: withErrorBoundary(async ({ data, protocol, schema }) => {
+        const args = ["lens", "verify", "--protocol", protocol as string];
+        args.push(data as string);
+        if (schema) args.push(schema as string);
+        const result = await execCli(...args);
+        return textContent(result);
+      }),
     },
-    withErrorBoundary(async ({ data, protocol, schema }) => {
-      const args = ["lens", "verify", "--protocol", protocol];
-      if (schema) args.push("--schema", schema);
-      args.push(data);
-      const result = await execCli(...args);
-      return textContent(result);
-    })
-  );
-
-  server.tool(
-    "panproto_lens_compose",
-    "Compose two protolens chains or schemas into a single chain",
     {
-      chain1: z.string().describe("Path to first chain or schema"),
-      chain2: z.string().describe("Path to second chain or schema"),
-      protocol: z.string().describe("Protocol name"),
-      json: z.boolean().optional().describe("Output as JSON"),
+      name: "panproto_lens_compose",
+      config: {
+        title: TOOL_CATALOG.panproto_lens_compose.title,
+        description: "Compose two protolens chains via vertical composition. Requires structural equality of the intermediate endofunctor.",
+        inputSchema: z.object({
+          chain1: z.string().describe("Path to first chain or schema"),
+          chain2: z.string().describe("Path to second chain or schema"),
+          protocol: z.string().describe("Protocol name"),
+          json: z.boolean().optional().describe("Output as JSON"),
+          chain: z.boolean().optional().describe("Output as protolens chain format"),
+        }),
+        annotations: TOOL_CATALOG.panproto_lens_compose.annotations,
+      },
+      handler: withErrorBoundary(async ({ chain1, chain2, protocol, json, chain }) => {
+        const args = ["lens", "compose", "--protocol", protocol as string];
+        if (json) args.push("--json");
+        if (chain) args.push("--chain");
+        args.push(chain1 as string, chain2 as string);
+        const result = await execCli(...args);
+        return textContent(result);
+      }),
     },
-    withErrorBoundary(async ({ chain1, chain2, protocol, json }) => {
-      const args = ["lens", "compose", "--protocol", protocol];
-      if (json) args.push("--json");
-      args.push(chain1, chain2);
-      const result = await execCli(...args);
-      return textContent(result);
-    })
-  );
-
-  server.tool(
-    "panproto_lens_inspect",
-    "Inspect a protolens chain showing each step, preconditions, and effects",
     {
-      chain: z.string().describe("Path to protolens chain JSON"),
-      protocol: z.string().describe("Protocol name"),
+      name: "panproto_lens_inspect",
+      config: {
+        title: TOOL_CATALOG.panproto_lens_inspect.title,
+        description: "Inspect a protolens chain showing each step, preconditions, effects, and optic kind classification",
+        inputSchema: z.object({
+          chain: z.string().describe("Path to protolens chain JSON"),
+          protocol: z.string().describe("Protocol name"),
+        }),
+        annotations: TOOL_CATALOG.panproto_lens_inspect.annotations,
+      },
+      handler: withErrorBoundary(async ({ chain, protocol }) => {
+        const result = await execCli("lens", "inspect", "--protocol", protocol as string, chain as string);
+        return textContent(result);
+      }),
     },
-    withErrorBoundary(async ({ chain, protocol }) => {
-      const result = await execCli("lens", "inspect", "--protocol", protocol, chain);
-      return textContent(result);
-    })
-  );
-
-  server.tool(
-    "panproto_lens_pipeline",
-    "Build a protolens chain from combinator steps (rename_field, remove_field, add_field, scoped/map_items, hoist_field, nest_field). Supports dependent optics: scoped transforms apply inner transforms to sub-schemas with optic kind determined by edge type (prop→Lens, item→Traversal, variant→Prism).",
     {
-      steps: z.string().describe("JSON array of pipeline steps, e.g. [{\"type\":\"rename_field\",\"old\":\"name\",\"new\":\"displayName\"},{\"type\":\"map_items\",\"focus\":\"words\",\"inner\":[{\"type\":\"add_field\",\"name\":\"confidence\",\"kind\":\"number\",\"default\":1.0}]}]"),
-      protocol: z.string().describe("Protocol name"),
-      schema: z.string().optional().describe("Path to schema for instantiation"),
-      save: z.string().optional().describe("Save pipeline chain to this file path"),
+      name: "panproto_lens_check",
+      config: {
+        title: TOOL_CATALOG.panproto_lens_check.title,
+        description: "Check whether a protolens chain is applicable against a set of schemas by threading the running schema through each step and re-checking preconditions",
+        inputSchema: z.object({
+          chain: z.string().describe("Path to protolens chain JSON"),
+          schemas_dir: z.string().describe("Path to directory of schema files"),
+          protocol: z.string().describe("Protocol name"),
+          dry_run: z.boolean().optional().describe("Preview without applying"),
+        }),
+        annotations: TOOL_CATALOG.panproto_lens_check.annotations,
+      },
+      handler: withErrorBoundary(async ({ chain, schemas_dir, protocol, dry_run }) => {
+        const args = ["lens", "check", "--protocol", protocol as string];
+        if (dry_run) args.push("--dry-run");
+        args.push(chain as string, schemas_dir as string);
+        const result = await execCli(...args);
+        return textContent(result);
+      }),
     },
-    withErrorBoundary(async ({ steps, protocol, schema, save }) => {
-      const args = ["lens", "pipeline", "--protocol", protocol, "--steps", steps];
-      if (schema) args.push("--schema", schema);
-      if (save) args.push("--save", save);
-      const result = await execCli(...args);
-      return textContent(result);
-    })
-  );
+    {
+      name: "panproto_lens_lift",
+      config: {
+        title: TOOL_CATALOG.panproto_lens_lift.title,
+        description: "Lift a protolens chain along a theory morphism, transporting it to a different protocol",
+        inputSchema: z.object({
+          chain: z.string().describe("Path to protolens chain JSON"),
+          morphism: z.string().describe("Path to theory morphism document"),
+          json: z.boolean().optional().describe("Output as JSON"),
+        }),
+        annotations: TOOL_CATALOG.panproto_lens_lift.annotations,
+      },
+      handler: withErrorBoundary(async ({ chain, morphism, json }) => {
+        const args = ["lens", "lift"];
+        if (json) args.push("--json");
+        args.push(chain as string, morphism as string);
+        const result = await execCli(...args);
+        return textContent(result);
+      }),
+    },
+  ];
 }

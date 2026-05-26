@@ -1,6 +1,6 @@
 # panproto-toolkit
 
-> Written for panproto v0.45.0. See [keeping up to date](#keeping-up-to-date) for version tracking.
+> Written for panproto v0.50.3. See [keeping up to date](#keeping-up-to-date) for version tracking.
 
 Claude Code skills, agents, MCP server, project templates, and CI integrations for working with [panproto](https://github.com/panproto/panproto), the schematic version control engine.
 

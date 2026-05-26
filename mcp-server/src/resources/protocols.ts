@@ -54,21 +54,19 @@ export function registerResources(server: McpServer): void {
   }));
 }
 
-const PROTOCOL_LIST = `panproto supports 50 semantic protocol definitions:
+const PROTOCOL_LIST = `panproto supports 50 semantic protocol definitions plus 19 linguistic annotation protocols:
 
-Serialization: Avro, FlatBuffers, ASN.1, Bond, MsgPack
-Data Schema: JSON Schema, CDDL, BSON
-API: OpenAPI, AsyncAPI, JSON:API, RAML
-Database: SQL, MongoDB, Cassandra, DynamoDB, Neo4j, Redis
-Social/Web: ATProto, RSS/Atom
-Documents: DOCX, ODF
+Serialization & IDLs: Avro, FlatBuffers, ASN.1, Bond, MessagePack Schema
+Data Schema: CDDL, BSON
+API: OpenAPI, AsyncAPI, RAML, JSON:API
+Database: MongoDB, Cassandra, DynamoDB, Neo4j, Redis
+Web/Document: ATProto Lexicons, DOCX, ODF
 Data Science: Parquet, Arrow, DataFrame
-Geospatial: GeoJSON
-Healthcare: FHIR
-Contact: vCard, iCal
-Finance: EDI X12, SWIFT MT
-Config: K8s CRD, Docker Compose, CloudFormation, Ansible
-Annotation: brat, CoNLL-U, NAF, OntoNotes
-Code: Protobuf, GraphQL, Thrift
+Domain: GeoJSON, FHIR, RSS/Atom, vCard/iCal, EDI X12, SWIFT MT
+Config: Kubernetes CRDs, CloudFormation, Ansible
+Annotation: AMR, bead, BRAT, Concrete, CoNLL-U, Decomp/UDS, ELAN, FoLiA, FOVEA, ISO-Space, LAF/GrAF, NAF, NIF, PAULA/Salt, TEI XML, TimeML, UCCA, UIMA/CAS, W3C Web Annotation
+Raw file: Non-code files (README, LICENSE, images)
+
+Additionally, 259 programming languages are supported via tree-sitter full-AST parsing, with each grammar auto-deriving a GAT theory.
 
 Each protocol is a pair of GATs (Generalized Algebraic Theories) composed from building-block theories via colimit.`;

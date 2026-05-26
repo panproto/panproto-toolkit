@@ -3,7 +3,9 @@ name: format-preserving
 description: >
   Format-preserving parsing via UnifiedCodec and CstComplement. Uses tree-sitter grammars
   for lossless round-trips: emit(parse(bytes)) == bytes for JSON, XML, YAML, TOML, CSV, TSV.
-  Covers the tree-sitter feature flag, CST extraction lens, and VCS integration.
+  Covers the tree-sitter feature flag, CST extraction lens, VCS integration, and the
+  parse/decorate/emit protolens (v0.48.0+) with AbstractSchema/DecoratedSchema distinction,
+  LayoutPolicy, and the Grothendieck fibration enrichment framing.
 ---
 
 # Format-Preserving Parsing

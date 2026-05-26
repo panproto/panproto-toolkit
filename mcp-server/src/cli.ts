@@ -10,10 +10,6 @@ interface ExecOptions {
   timeout?: number;
 }
 
-/**
- * Execute the panproto CLI (`schema` command) and return stdout.
- * Throws on non-zero exit with stderr as the error message.
- */
 export async function execCli(
   ...argsAndOptions: Array<string | ExecOptions>
 ): Promise<string> {
@@ -48,6 +44,13 @@ export async function execCli(
   }
 }
 
+export async function execCliJson<T = unknown>(
+  ...argsAndOptions: Array<string | ExecOptions>
+): Promise<T> {
+  const raw = await execCli(...argsAndOptions);
+  return JSON.parse(raw) as T;
+}
+
 function extractErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     const execError = error as Error & { stderr?: string; code?: number };
@@ -59,15 +62,13 @@ function extractErrorMessage(error: unknown): string {
   return "CLI execution failed";
 }
 
-/** Content helper for tool responses. */
 export function textContent(text: string) {
   return { content: [{ type: "text" as const, text }] };
 }
 
-/** Wrap a tool handler with consistent error handling. */
-export function withErrorBoundary<T>(
-  fn: (args: T) => Promise<{ content: Array<{ type: "text"; text: string }> }>
-): (args: T) => Promise<{ content: Array<{ type: "text"; text: string }> }> {
+export function withErrorBoundary<T extends Record<string, unknown>>(
+  fn: (args: T) => Promise<{ content: Array<{ type: "text"; text: string }>; structuredContent?: Record<string, unknown> }>
+): (args: T, extra?: unknown) => Promise<{ content: Array<{ type: "text"; text: string }>; structuredContent?: Record<string, unknown> }> {
   return async (args: T) => {
     try {
       return await fn(args);

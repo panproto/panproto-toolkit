@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.14.0] - 2026-05-26
+
+Catches the toolkit up across eight panproto releases (v0.45.0 → v0.50.3). The centerpiece is the MCP server security and governance layer: every tool is classified by risk, destructive operations gate on MCP elicitation-based user approval, and all invocations are audit-logged. The server also expands from 41 to 72 tools, covering the full CLI surface including VCS write operations, git bridge, and enrichment management.
+
+### Added
+
+- **MCP server security layer**: tool classification registry (`policy/tool-catalog.ts`), elicitation-based approval gates for destructive operations (`policy/engine.ts`), session audit log (`policy/audit.ts`), and a `panproto_session_audit` tool to inspect the log.
+- **Tool annotations on every tool**: `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint` via MCP `ToolAnnotations`.
+- **31 new MCP tools**: VCS write (init, add, commit, checkout, branch create/delete, tag create/delete, merge, rebase, cherry-pick, reset, stash push/pop, gc), VCS read (show, reflog, bisect, branch list, tag list, stash list), schema verify, enrichment (add-merger, add-policy, remove), lens (check, lift), expression (gat-eval, gat-check, check), data sync, git bridge (import, export). Removed 3 tools that referenced nonexistent CLI subcommands (`lens pipeline`, `data parse --format-preserving`, `data emit`). Reclassified `panproto_lift` from write-destructive to read (it only prints to stdout).
+- **3 new MCP prompts**: `vcs-workflow` (init → commit → branch → merge guide), `cross-protocol-translation`, `code-schema-diff`.
+- **`outputSchema` on priority tools**: `panproto_health`, `panproto_session_audit` return `structuredContent`.
+- **`skills/decorate-schemas`**: new skill covering `AbstractSchema`/`DecoratedSchema`, `ParserRegistry::decorate()`, `LayoutPolicy`, the section law, Grothendieck fibration framing, `TheoryTransform::StripEnrichment`/`AddEnrichment`, cross-crate `LayoutEnricher` registry.
+- **`skills/sdk-haskell`**: new skill covering Haskell bindings via `panproto-c` (safer-ffi C ABI), Native vs Rust backends, capability typeclasses, handle-based hot path, CBOR cold path.
+- **`agents/code-transform`**: new agent for parse → protolens → emit code refactoring pipeline.
+
+### Changed
+
+- **MCP server**: all 72 tools registered via `registerTool()` (non-deprecated path) with deterministic alphabetical ordering for LLM prompt cache consistency. Version bumped from `0.12.1` to `0.14.0`.
+- **`skills/full-ast-parsing`**: 248 → 259 languages; added parse/decorate/emit protolens (v0.48.0), runtime grammar override (v0.47.0), anonymous token field text query (v0.47.0), IdGenerator disambiguation (v0.50.0), emit_pretty corrections.
+- **`skills/sdk-python`**: added hom_search/cascade (`find_morphisms`, `find_best_morphism`, `induce_schema_morphism`, `induce_migration_from_theory` + `TheoryMorphism`/`SchemaMorphism`/`FoundMorphism`), `TheoryBuilder` fluent API, Theory loaders (`from_json`/`from_yaml`/`from_nickel`/`from_path`), ProtolensChain DSL loaders, lens combinators (`rename_field`, `remove_field`, `add_field`, `hoist_field`, `pipeline`, `auto_generate_lens_candidates`), `AstParserRegistry.override_grammar()`, `PySchema.field_text()`. Updated counts: 32 classes + 34 functions.
+- **`skills/sdk-rust`**: version bump to 0.50; noted `Protocol::from_theories`, `AbstractSchema`/`DecoratedSchema` split, `Grammar` now `#[non_exhaustive]`, `Complement::compose` returns `Result`.
+- **`skills/expression-language`**: updated description to 59 builtins (was ~50), including graph traversal builtins (Edge, Children, HasEdge, EdgeCount, Anchor).
+- **`skills/format-preserving`**: updated description to include parse/decorate/emit protolens (v0.48.0+), `LayoutPolicy`, Grothendieck fibration framing.
+- **`skills/companion-grammar-packs`**: 248 → 259 languages; BUGS/JAGS grammars; .musicxml on xml protocol.
+- **Resources**: `panproto://grammars` updated to 259 languages with Statistical and Music categories; `panproto://protocols` updated with full annotation protocol list.
+- **Templates**: all bumped to panproto v0.50.0 (TS: `@panproto/core ^0.50.0`, Python: `panproto>=0.50.0`, Rust: `panproto-core 0.50.0` with edition 2024).
+- **All 5 agents**: version references updated from v0.45.0 to v0.50.3.
+- **`docs/mcp-server-guide.md`**: added Security and Approvals section; updated tool count from 18 to 75.
+- **`mcp-server/package.json`**: `@modelcontextprotocol/sdk ^1.29.0`, `@panproto/core ^0.50.0`.
+- **`README.md`**: "Written for panproto v0.50.3".
+
 ## [0.13.0] - 2026-05-06
 
 Catches the toolkit up across six panproto releases (v0.40.0 → v0.45.0). Last refresh was for v0.39.0; this release covers `emit_pretty` / `ParseEmitLens` (0.40), the Haskell binding (0.41), the Theory→Schema bridge and CLI-integrated REPL (0.42), the dependent-sort surface in `class!` / `inductive!` / `derive_theory!` (0.44), `Theory.from_json` / `from_yaml` / `from_nickel` and `panproto.TheoryBuilder` on the Python SDK (0.44 / 0.45), and the spaCy-style companion grammar packs (0.45).

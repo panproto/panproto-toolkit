@@ -1,39 +1,51 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { execCli, textContent, withErrorBoundary } from "../cli.js";
+import type { ToolDefinition } from "./types.js";
+import { TOOL_CATALOG } from "../policy/tool-catalog.js";
 
-export function registerDiffTools(server: McpServer): void {
-  server.tool(
-    "panproto_diff",
-    "Compute structural diff between two schemas, showing added/removed/modified elements",
+export function diffTools(): ToolDefinition[] {
+  return [
     {
-      src: z.string().describe("Path to source schema"),
-      tgt: z.string().describe("Path to target schema"),
-      stat: z.boolean().optional().describe("Show diffstat summary"),
-      detect_renames: z.boolean().optional().describe("Detect likely renames"),
-      theory: z.boolean().optional().describe("Show theory-level diff (sorts, operations)"),
+      name: "panproto_diff",
+      config: {
+        title: TOOL_CATALOG.panproto_diff.title,
+        description: "Compute structural diff between two schemas, showing added/removed/modified elements",
+        inputSchema: z.object({
+          src: z.string().describe("Path to source schema"),
+          tgt: z.string().describe("Path to target schema"),
+          stat: z.boolean().optional().describe("Show diffstat summary"),
+          detect_renames: z.boolean().optional().describe("Detect likely renames"),
+          theory: z.boolean().optional().describe("Show theory-level diff (sorts, operations)"),
+          optic_kind: z.boolean().optional().describe("Show optic kind classification for each change"),
+        }),
+        annotations: TOOL_CATALOG.panproto_diff.annotations,
+      },
+      handler: withErrorBoundary(async ({ src, tgt, stat, detect_renames, theory, optic_kind }) => {
+        const args = ["diff", src as string, tgt as string];
+        if (stat) args.push("--stat");
+        if (detect_renames) args.push("--detect-renames");
+        if (theory) args.push("--theory");
+        if (optic_kind) args.push("--optic-kind");
+        const result = await execCli(...args);
+        return textContent(result);
+      }),
     },
-    withErrorBoundary(async ({ src, tgt, stat, detect_renames, theory }) => {
-      const args = ["diff", src, tgt];
-      if (stat) args.push("--stat");
-      if (detect_renames) args.push("--detect-renames");
-      if (theory) args.push("--theory");
-      const result = await execCli(...args);
-      return textContent(result);
-    })
-  );
-
-  server.tool(
-    "panproto_classify",
-    "Classify a schema change as compatible, backward-compatible, or breaking",
     {
-      src: z.string().describe("Path to source schema"),
-      tgt: z.string().describe("Path to target schema"),
-      mapping: z.string().describe("Path to migration mapping file"),
+      name: "panproto_classify",
+      config: {
+        title: TOOL_CATALOG.panproto_classify.title,
+        description: "Classify a schema change as compatible, backward-compatible, or breaking",
+        inputSchema: z.object({
+          src: z.string().describe("Path to source schema"),
+          tgt: z.string().describe("Path to target schema"),
+          mapping: z.string().describe("Path to migration mapping file"),
+        }),
+        annotations: TOOL_CATALOG.panproto_classify.annotations,
+      },
+      handler: withErrorBoundary(async ({ src, tgt, mapping }) => {
+        const result = await execCli("check", "--src", src as string, "--tgt", tgt as string, "--mapping", mapping as string);
+        return textContent(result);
+      }),
     },
-    withErrorBoundary(async ({ src, tgt, mapping }) => {
-      const result = await execCli("check", "--src", src, "--tgt", tgt, "--mapping", mapping);
-      return textContent(result);
-    })
-  );
+  ];
 }

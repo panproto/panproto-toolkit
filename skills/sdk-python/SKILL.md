@@ -317,6 +317,113 @@ except panproto.PanprotoError as e:
     print(e)  # human-readable error message
 ```
 
+## Homomorphism search and cascade (0.50.0+)
+
+Discover theory morphisms and induce schema/data migrations programmatically:
+
+```python
+from panproto import find_morphisms, find_best_morphism, induce_schema_morphism, induce_migration_from_theory
+
+# Find all morphisms between two schemas (CSP + backtracking search)
+morphisms = find_morphisms(source_schema, target_schema, monic=True)
+
+# Get the single best morphism (highest quality score)
+best = find_best_morphism(source_schema, target_schema)
+print(best.quality)      # 0.0–1.0 confidence
+print(best.vertex_map)   # source vertex → target vertex mapping
+
+# Induce a schema morphism from a theory morphism
+schema_morph = induce_schema_morphism(theory_morph, source_schema)
+
+# Compile the morphism directly to a migration
+migration = induce_migration_from_theory(theory_morph, source_schema, target_schema)
+```
+
+Classes: `TheoryMorphism` (from theory-level morphism discovery), `SchemaMorphism` (induced from theory morphism), `FoundMorphism` (from schema-level hom search, with `vertex_map` and `quality`).
+
+## Fluent theory construction (0.44.0+)
+
+```python
+builder = panproto.TheoryBuilder("MyTheory")
+builder.sort("Vertex")
+builder.sort("Edge")
+builder.op("src", inputs=["Edge"], output="Vertex")
+builder.op("tgt", inputs=["Edge"], output="Vertex")
+theory = builder.build()
+```
+
+## Theory loaders (0.44.0+)
+
+```python
+theory = panproto.Theory.from_json(json_string)
+theory = panproto.Theory.from_yaml(yaml_string)
+theory = panproto.Theory.from_nickel(nickel_string)
+theory = panproto.Theory.from_path("theory.ncl")       # auto-dispatch on extension
+theory = panproto.Theory.from_dict_json(json_string)    # from flat serialized JSON (not a DSL document)
+theory = panproto.Theory.from_dict_yaml(yaml_string)    # from flat serialized YAML (not a DSL document)
+
+json_str = theory.to_json()
+yaml_str = theory.to_yaml()
+```
+
+## ProtolensChain DSL (0.44.0+)
+
+Load lens specifications from Nickel, JSON, or YAML DSL documents:
+
+```python
+chain = panproto.ProtolensChain.from_dsl_json(json_string, body_vertex="steps")
+chain = panproto.ProtolensChain.from_dsl_yaml(yaml_string, body_vertex="steps")
+chain = panproto.ProtolensChain.from_dsl_nickel(nickel_string, body_vertex="steps")
+chain = panproto.ProtolensChain.from_dsl_path("migration.ncl", body_vertex="steps")
+
+# Instantiate against a concrete schema
+lens = chain.instantiate(schema, protocol)
+
+# Compose two chains
+composed = chain.compose(other_chain)
+
+# Serialize
+chain.to_json()
+panproto.ProtolensChain.from_json(json_string)
+```
+
+## Lens combinators (0.50.0+)
+
+```python
+from panproto import rename_field, remove_field, add_field, hoist_field, pipeline, auto_generate_lens_candidates
+
+# Individual combinators
+step1 = rename_field("User", "name", "old_name", "new_name")   # parent, field, old, new
+step2 = remove_field("deprecated_field")                         # field name
+step3 = add_field("User", "new_field", "string")                # parent, name, kind
+step4 = hoist_field("User", "address", "city")                  # parent, intermediate, child
+
+# Compose into a pipeline
+chain = pipeline([step1, step2, step3, step4])
+
+# Ranked candidates
+candidates = auto_generate_lens_candidates(old_schema, new_schema, protocol, top_n=5, stringency="balanced")
+for c in candidates:
+    print(c.quality)
+```
+
+## Runtime grammar override (0.47.0+)
+
+```python
+registry = panproto.AstParserRegistry()
+registry.override_grammar("my-lang", ["myext"], language_ptr, node_types_json)
+```
+
+## Anonymous token field text (0.47.0+)
+
+```python
+text = schema.field_text(vertex_id, "operator")  # returns str or None
+```
+
+## SDK surface summary
+
+The Python SDK exposes 32 classes and 34 module-level functions across 16 modules: schema, protocols, mig, hom, check, inst, io, lens, gat, expr, vcs, parse, project, git, convert, error.
+
 ## Further Reading
 
 - [Tutorial Ch. 4: Your First Migration](https://panproto.dev/tutorial/chapters/04-your-first-migration.html) (Python examples)

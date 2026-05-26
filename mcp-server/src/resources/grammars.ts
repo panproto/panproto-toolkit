@@ -1,7 +1,7 @@
 // Grammar resource provides the catalog of supported tree-sitter languages.
 // Registered via the protocols resource module.
 
-export const GRAMMAR_CATALOG = `panproto supports full-AST parsing for 248 programming languages via tree-sitter grammars.
+export const GRAMMAR_CATALOG = `panproto supports full-AST parsing for 259 programming languages via tree-sitter grammars.
 
 Top languages by category:
 
@@ -15,6 +15,8 @@ Config: Dockerfile, HCL (Terraform), Nix, CMake
 Shell: Bash, Zsh, Fish, PowerShell
 Mobile: Swift, Dart, Objective-C, Kotlin
 Scientific: R, Julia, MATLAB, Fortran, LaTeX
+Statistical: BUGS, JAGS
+Music: SuperCollider, LilyPond, ABC, Csound, ChucK, Glicol, Tidal, Strudel
 Markup: Markdown, reStructuredText, AsciiDoc, Org
 
 Each grammar auto-derives a GAT theory (sorts from node types, operations from field names).

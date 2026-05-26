@@ -1,7 +1,7 @@
 {
   "name": "@panproto/mcp-server",
-  "version": "0.13.0",
-  "description": "MCP server exposing panproto schema migration operations",
+  "version": "0.14.0",
+  "description": "MCP server exposing panproto schema operations with tool annotations, approval gates, and audit logging",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -19,8 +19,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "@panproto/core": "^0.45.0"
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@panproto/core": "^0.50.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

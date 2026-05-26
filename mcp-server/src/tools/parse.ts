@@ -1,82 +1,56 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { execCli, textContent, withErrorBoundary } from "../cli.js";
+import type { ToolDefinition } from "./types.js";
+import { TOOL_CATALOG } from "../policy/tool-catalog.js";
 
-export function registerParseTools(server: McpServer): void {
-  server.tool(
-    "panproto_parse_file",
-    "Parse a source file into a panproto schema representation (248 languages supported via tree-sitter)",
+export function parseTools(): ToolDefinition[] {
+  return [
     {
-      file_path: z.string().describe("Path to the source file"),
+      name: "panproto_parse_file",
+      config: {
+        title: TOOL_CATALOG.panproto_parse_file.title,
+        description: "Parse a source file into a panproto schema representation (259 languages supported via tree-sitter). Each grammar auto-derives a GAT theory from node-types.json. The generic AstWalker handles all languages with interstitial text capture for exact round-trip emission. As of v0.48.0, the parse/emit pair is a first-class asymmetric lens with the LayoutEnricher cross-crate registration mechanism.",
+        inputSchema: z.object({
+          file_path: z.string().describe("Path to the source file"),
+        }),
+        annotations: TOOL_CATALOG.panproto_parse_file.annotations,
+      },
+      handler: withErrorBoundary(async ({ file_path }) => {
+        const result = await execCli("parse", "file", file_path as string);
+        return textContent(result);
+      }),
     },
-    withErrorBoundary(async ({ file_path }) => {
-      const result = await execCli("parse", "file", file_path);
-      return textContent(result);
-    })
-  );
-
-  server.tool(
-    "panproto_parse_project",
-    "Parse all files in a directory into a unified project schema with cross-file imports",
     {
-      path: z.string().optional().describe("Directory to parse (default: current directory)"),
+      name: "panproto_parse_project",
+      config: {
+        title: TOOL_CATALOG.panproto_parse_project.title,
+        description: "Parse all files in a directory into a unified project schema with cross-file import resolution via schema coproduct. Uses the panproto.toml manifest if present.",
+        inputSchema: z.object({
+          path: z.string().optional().describe("Directory to parse (default: current directory)"),
+        }),
+        annotations: TOOL_CATALOG.panproto_parse_project.annotations,
+      },
+      handler: withErrorBoundary(async ({ path }) => {
+        const args = ["parse", "project"];
+        if (path) args.push(path as string);
+        const result = await execCli(...args, { timeout: 120_000 });
+        return textContent(result);
+      }),
     },
-    withErrorBoundary(async ({ path }) => {
-      const args = ["parse", "project"];
-      if (path) args.push(path);
-      const result = await execCli(...args, { timeout: 120_000 });
-      return textContent(result);
-    })
-  );
-
-  server.tool(
-    "panproto_parse_emit",
-    "Round-trip parse and emit a source file (parse then reconstruct to verify fidelity)",
     {
-      file_path: z.string().describe("Path to the source file"),
+      name: "panproto_parse_emit",
+      config: {
+        title: TOOL_CATALOG.panproto_parse_emit.title,
+        description: "Round-trip parse and emit a source file (parse then reconstruct to verify fidelity). Uses emit_pretty with the grammar-driven layout policy for canonical formatting. The v0.48.0+ parse/decorate/emit lens guarantees structural equivalence modulo vertex-id renaming.",
+        inputSchema: z.object({
+          file_path: z.string().describe("Path to the source file"),
+        }),
+        annotations: TOOL_CATALOG.panproto_parse_emit.annotations,
+      },
+      handler: withErrorBoundary(async ({ file_path }) => {
+        const result = await execCli("parse", "emit", file_path as string);
+        return textContent(result);
+      }),
     },
-    withErrorBoundary(async ({ file_path }) => {
-      const result = await execCli("parse", "emit", file_path);
-      return textContent(result);
-    })
-  );
-
-  server.tool(
-    "panproto_parse_preserving",
-    "Format-preserving parse: parse a data file (JSON, XML, YAML, TOML, CSV, TSV) through the unified tree-sitter codec, preserving all formatting (whitespace, key ordering, indentation, comments). Returns the instance and a CST complement for format-preserving re-emission. Requires the tree-sitter feature.",
-    {
-      file_path: z.string().describe("Path to the data file"),
-      protocol: z.string().describe("Protocol name (e.g. openapi, atproto, geojson)"),
-      schema: z.string().optional().describe("Path to domain schema (auto-detected if omitted)"),
-      save_complement: z.string().optional().describe("Save CST complement to this path for later re-emission"),
-    },
-    withErrorBoundary(async ({ file_path, protocol, schema, save_complement }) => {
-      const args = ["data", "parse", "--protocol", protocol, "--format-preserving"];
-      if (schema) args.push("--schema", schema);
-      if (save_complement) args.push("--save-complement", save_complement);
-      args.push(file_path);
-      const result = await execCli(...args);
-      return textContent(result);
-    })
-  );
-
-  server.tool(
-    "panproto_emit_preserving",
-    "Format-preserving emit: re-emit instance data using a CST complement to restore the original file formatting. The output is byte-identical to the original file for unmodified data.",
-    {
-      instance: z.string().describe("Path to instance data (MessagePack or JSON)"),
-      complement: z.string().describe("Path to CST complement from format-preserving parse"),
-      protocol: z.string().describe("Protocol name"),
-      schema: z.string().optional().describe("Path to domain schema"),
-      output: z.string().optional().describe("Output file path (default: stdout)"),
-    },
-    withErrorBoundary(async ({ instance, complement, protocol, schema, output }) => {
-      const args = ["data", "emit", "--protocol", protocol, "--complement", complement];
-      if (schema) args.push("--schema", schema);
-      if (output) args.push("--output", output);
-      args.push(instance);
-      const result = await execCli(...args);
-      return textContent(result);
-    })
-  );
+  ];
 }

@@ -4,7 +4,31 @@
 
 The `@panproto/mcp-server` package exposes panproto operations to any [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) compatible client: Claude Desktop, VS Code with the Claude extension, or any other MCP host.
 
-The server wraps the `schema` CLI and the `@panproto/core` WASM module, providing 18 tools, 3 resources, and 3 prompt templates.
+The server wraps the `schema` CLI and the `@panproto/core` WASM module, providing 72 tools (with tool annotations, approval gates, and audit logging), 3 resources, and 6 prompt templates.
+
+## Security and Approvals
+
+Every tool is classified by risk level and annotated with MCP tool annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`):
+
+- **Read-only** (~40 tools): analysis, inspection, diffing, validation. Auto-approved, no confirmation needed.
+- **Write-additive** (~12 tools): VCS init/add/commit, enrichment additions, branch/tag creation. Auto-approved by default.
+- **Write-destructive** (~18 tools): data migration, VCS merge/rebase/reset, enrichment removal, git import/export. Require explicit user approval via MCP elicitation before execution.
+
+### Approval flow
+
+For destructive operations, the server requests confirmation via MCP elicitation (`elicitation/create` with `form` mode). The user sees what will happen and confirms or cancels. If the MCP client does not support elicitation, the tool requires a `confirmed: true` parameter on re-call.
+
+### Audit log
+
+Every tool invocation is recorded in a session-scoped audit log with: timestamp, tool name, risk level, arguments, approval status, result, and duration. The `panproto_session_audit` tool exposes this log.
+
+### Policy configuration
+
+The server accepts environment variables to customize policy:
+- `PANPROTO_AUTO_APPROVE_READS=true` (default: true)
+- `PANPROTO_AUTO_APPROVE_ADDITIVE=true` (default: true)
+- `PANPROTO_REQUIRE_APPROVAL_DESTRUCTIVE=true` (default: true)
+- `PANPROTO_AUDIT_LOG=true` (default: true)
 
 ## Installation
 

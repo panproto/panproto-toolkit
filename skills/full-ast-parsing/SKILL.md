@@ -1,9 +1,10 @@
 ---
 name: full-ast-parsing
 description: >
-  Parse full ASTs of 248 programming languages using tree-sitter grammars. Covers
+  Parse full ASTs of 259 programming languages using tree-sitter grammars. Covers
   schema parse file, schema parse project, auto-derived GAT theories, interstitial
-  text preservation, and round-trip emission.
+  text preservation, round-trip emission, the parse/decorate/emit lens (v0.48.0+),
+  runtime grammar override, and anonymous token field text query.
 ---
 
 # Full-AST Parsing
@@ -12,10 +13,13 @@ You are helping a user parse source code into panproto's universal representatio
 
 ## Core concepts
 
-- **248 languages** supported via tree-sitter grammars
+- **259 languages** supported via tree-sitter grammars
 - **Auto-derived theories**: each language's grammar automatically becomes a schema theory (sorts from node types, operations from fields)
 - **Interstitial text**: keywords, punctuation, and whitespace between named children are captured for exact round-trip emission
 - **One generic walker**: a single `AstWalker` handles all languages; no per-language code needed
+- **Parse/decorate/emit lens** (v0.48.0+): a verified asymmetric lens connecting parsing and emission as a first-class protolens with `AbstractSchema`/`DecoratedSchema` typed distinction
+- **Runtime grammar override** (v0.47.0+): register external grammars without rebuilding
+- **Anonymous token field text** (v0.47.0+): `Schema::field_text(vertex_id, name)` queries named anonymous-token children without byte arithmetic
 
 ## Single file parsing
 
@@ -132,6 +136,61 @@ This is what makes by-construction schemas (e.g. the output of a migration) rend
 
 Structural equivalence in EmitParse is witnessed by a pair of multisets: `kind_multiset` (vertex kinds) and `edge_multiset` (`(src_kind, edge_kind, tgt_kind)` triples). The vertex multiset alone doesn't distinguish a tree from its mirror, so the edge witness carries weight. The `strip_complement` helper removes byte-position constraints while preserving the choice discriminators the walker recorded at parse time, which is what makes the retraction tight rather than approximate.
 
+### Parse/decorate/emit protolens (0.48.0+)
+
+The parse/emit pair is now a first-class protolens via `ParserRegistry::parse_emit_protolens()`. This enables composition with other protolens steps in a chain.
+
+The key typed distinction: `AbstractSchema` (no layout constraints) vs `DecoratedSchema` (full layout fibre: `start-byte`, `end-byte`, `interstitial-N`, `chose-alt-fingerprint`, `chose-alt-child-kinds`).
+
+- `SchemaBuilder::build_abstract()` returns `AbstractSchema`, rejecting any layout-fibre constraints
+- `SchemaBuilder::build_decorated()` returns `DecoratedSchema` when layout constraints are present
+- `Schema::forget_layout()` strips layout sorts (forgetful functor U)
+- `ParserRegistry::decorate(lang, abstract_schema, policy)` synthesizes the layout fibre (section of U)
+
+The section law: `forget_layout(decorate(a, p)) ≅_kind a` (equal up to vertex-id renaming and the kind/edge multiset).
+
+Layout enrichment uses the Grothendieck fibration framing: `EnrichmentKind::Layout` tags the fibre, and `TheoryTransform::StripEnrichment` / `TheoryTransform::AddEnrichment` are the protolens-level transforms. The cross-crate `LayoutEnricher` trait in `panproto-lens::enrichment_registry` is populated by `panproto-parse` at `ParserRegistry::new` time.
+
+```rust
+use panproto_core::parse::{LayoutPolicy, ParserRegistry};
+
+let reg = ParserRegistry::new();
+let policy = LayoutPolicy::default();
+let decorated = reg.decorate("typescript", &abstract_schema, &policy)?;
+// decorated can now be emitted via emit_pretty
+```
+
+### Runtime grammar override (0.47.0+)
+
+Register external grammars at runtime without rebuilding panproto:
+
+```rust
+registry.override_grammar(
+    "my-lang".into(), vec!["myext".into()],
+    language_ptr, node_types_json, None, None,
+)?;
+registry.register_external_grammar_owned(
+    name, extensions, language, node_types, tags_query, grammar_json,
+)?;
+registry.unregister("my-lang");
+```
+
+Python: `AstParserRegistry.override_grammar(name, extensions, language_ptr, node_types, tags_query=None, grammar_json=None)`
+
+### Anonymous token field text (0.47.0+)
+
+Query named anonymous-token children (tree-sitter `field('name', token)`) directly:
+
+```rust
+let text: Option<&str> = schema.field_text(vertex_id, "operator");
+```
+
+Python: `schema.field_text(vertex_id, name)`
+
+### IdGenerator disambiguation (0.50.0+)
+
+Repeated names at the same scope are disambiguated: `foo`, `foo#1`, `foo#2`. This prevents vertex-id collisions when a scope contains multiple definitions of the same name.
+
 ## Auto-derived theories
 
 Each language's grammar automatically generates a schema theory.
@@ -168,7 +227,7 @@ Top languages by category:
 | Mobile | Swift, Dart, Objective-C |
 | Scientific | R, Julia, MATLAB, Fortran |
 
-Full list: 248 languages.
+Full list: 259 languages across 11 grammar groups (core, web, systems, jvm, scripting, data, functional, devops, mobile, music, all).
 
 ## Use cases
 
