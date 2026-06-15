@@ -33,7 +33,7 @@ panproto-core = "0.27"
 
 ```toml
 # Example: core + parsing + git bridge
-panproto-core = { version = "0.50", features = ["full-parse", "git"] }
+panproto-core = { version = "0.52", features = ["full-parse", "git"] }
 ```
 
 Or depend on individual crates for finer control:

@@ -70,7 +70,7 @@ Every tool invocation is recorded in a session-scoped, append-only audit log wit
 
 ## Tools (72)
 
-Tool descriptions are accurate against panproto v0.50.3. All tools are registered via `registerTool` with deterministic alphabetical ordering for LLM prompt cache consistency.
+Tool descriptions are accurate against panproto v0.52.1. All tools are registered via `registerTool` with deterministic alphabetical ordering for LLM prompt cache consistency.
 
 ### Schema (6)
 

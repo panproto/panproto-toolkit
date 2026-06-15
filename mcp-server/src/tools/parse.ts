@@ -9,7 +9,7 @@ export function parseTools(): ToolDefinition[] {
       name: "panproto_parse_file",
       config: {
         title: TOOL_CATALOG.panproto_parse_file.title,
-        description: "Parse a source file into a panproto schema representation (259 languages supported via tree-sitter). Each grammar auto-derives a GAT theory from node-types.json. The generic AstWalker handles all languages with interstitial text capture for exact round-trip emission. As of v0.48.0, the parse/emit pair is a first-class asymmetric lens with the LayoutEnricher cross-crate registration mechanism.",
+        description: "Parse a source file into a panproto schema representation (261 languages supported via tree-sitter). Each grammar auto-derives a GAT theory from node-types.json. The generic AstWalker handles all languages with interstitial text capture for exact round-trip emission. As of v0.48.0, the parse/emit pair is a first-class asymmetric lens with the LayoutEnricher cross-crate registration mechanism.",
         inputSchema: z.object({
           file_path: z.string().describe("Path to the source file"),
         }),

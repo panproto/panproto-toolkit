@@ -67,6 +67,6 @@ Config: Kubernetes CRDs, CloudFormation, Ansible
 Annotation: AMR, bead, BRAT, Concrete, CoNLL-U, Decomp/UDS, ELAN, FoLiA, FOVEA, ISO-Space, LAF/GrAF, NAF, NIF, PAULA/Salt, TEI XML, TimeML, UCCA, UIMA/CAS, W3C Web Annotation
 Raw file: Non-code files (README, LICENSE, images)
 
-Additionally, 259 programming languages are supported via tree-sitter full-AST parsing, with each grammar auto-deriving a GAT theory.
+Additionally, 261 programming languages are supported via tree-sitter full-AST parsing, with each grammar auto-deriving a GAT theory.
 
 Each protocol is a pair of GATs (Generalized Algebraic Theories) composed from building-block theories via colimit.`;

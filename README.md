@@ -1,6 +1,6 @@
 # panproto-toolkit
 
-> Written for [panproto](https://github.com/panproto/panproto) v0.50.3. See [keeping up to date](#keeping-up-to-date) for version tracking.
+> Written for [panproto](https://github.com/panproto/panproto) v0.52.1. See [keeping up to date](#keeping-up-to-date) for version tracking.
 
 Claude Code skills, agents, an MCP server, project templates, and CI integrations for working with panproto, the schematic version control engine.
 
@@ -57,7 +57,7 @@ Invoke any skill in Claude Code with `/panproto-<name>`.
 | **query-instances** | `/panproto-query-instances` | Query and filter instances with predicates and projections |
 | **cross-protocol** | `/panproto-cross-protocol` | Cross-protocol translation with loss analysis |
 | **build-protocol** | `/panproto-build-protocol` | Define custom protocols by composing building-block theories via colimit |
-| **full-ast-parsing** | `/panproto-full-ast-parsing` | Parse 259 programming languages via tree-sitter; parse/decorate/emit lens (v0.48.0+) for verified round-trip emission |
+| **full-ast-parsing** | `/panproto-full-ast-parsing` | Parse 261 programming languages via tree-sitter; parse/decorate/emit lens (v0.48.0+) for verified round-trip emission |
 | **decorate-schemas** | `/panproto-decorate-schemas` | Attach layout enrichment to hand-built schemas for source emission; Grothendieck fibration framing |
 | **format-preserving** | `/panproto-format-preserving` | Lossless round-trips for JSON, XML, YAML, TOML, CSV, TSV via CstComplement |
 | **lens-dsl** | `/panproto-lens-dsl` | Declarative lens specs in Nickel, JSON, or YAML |
@@ -169,7 +169,7 @@ All invocations are recorded in a session-scoped audit log accessible via `panpr
 |-----|---------|
 | `panproto://protocols` | 50 protocol definitions + 19 annotation protocols |
 | `panproto://codecs` | 50+ I/O codecs (JSON, XML, Protobuf, Avro, and more) |
-| `panproto://grammars` | 259 language parsers via tree-sitter |
+| `panproto://grammars` | 261 language parsers via tree-sitter |
 
 See [mcp-server/README.md](mcp-server/README.md) for full documentation.
 
@@ -177,9 +177,9 @@ See [mcp-server/README.md](mcp-server/README.md) for full documentation.
 
 Project scaffolds for getting started quickly:
 
-- `templates/ts-project/` : TypeScript project with `@panproto/core ^0.50.0`
-- `templates/python-project/` : Python project with `panproto>=0.50.0`
-- `templates/rust-project/` : Rust project with `panproto-core 0.50.0` (edition 2024, rust-version 1.85)
+- `templates/ts-project/` : TypeScript project with `@panproto/core ^0.52.1`
+- `templates/python-project/` : Python project with `panproto>=0.52.1`
+- `templates/rust-project/` : Rust project with `panproto-core 0.52.1` (edition 2024, rust-version 1.85)
 - `templates/github-actions/` : CI workflow templates
 
 ## Learning path

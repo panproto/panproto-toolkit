@@ -1,7 +1,7 @@
 ---
 name: full-ast-parsing
 description: >
-  Parse full ASTs of 259 programming languages using tree-sitter grammars. Covers
+  Parse full ASTs of 261 programming languages using tree-sitter grammars. Covers
   schema parse file, schema parse project, auto-derived GAT theories, interstitial
   text preservation, round-trip emission, the parse/decorate/emit lens (v0.48.0+),
   runtime grammar override, and anonymous token field text query.
@@ -13,7 +13,7 @@ You are helping a user parse source code into panproto's universal representatio
 
 ## Core concepts
 
-- **259 languages** supported via tree-sitter grammars
+- **261 languages** supported via tree-sitter grammars
 - **Auto-derived theories**: each language's grammar automatically becomes a schema theory (sorts from node types, operations from fields)
 - **Interstitial text**: keywords, punctuation, and whitespace between named children are captured for exact round-trip emission
 - **One generic walker**: a single `AstWalker` handles all languages; no per-language code needed
@@ -123,7 +123,21 @@ Exact round-trip works because interstitial text (keywords, operators, whitespac
 
 `AstParser::emit_pretty` is a generic walker over the language's tree-sitter `grammar.json` production rules. Given a schema produced by hand or by migration (no parse-history bytes attached), it renders source text by traversing the production graph: `STRING` and `PATTERN` emit literally, `SYMBOL` recurses, `BLANK` is empty, `SEQ` concatenates children, `CHOICE` dispatches cursor-first against unconsumed children (taking the first alternative whose head matches), `REPEAT` repeats while children remain, `OPTIONAL` consumes when matchable, `FIELD`/`ALIAS`/`TOKEN`/`PREC*` are transparent. Hidden rules inline.
 
-This is what makes by-construction schemas (e.g. the output of a migration) renderable without a CST complement. `panproto-grammars` ships `grammar.json` alongside `node-types.json` and `parser.c` for all 250 vendored grammars; `tools/fetch-grammar-json.py` populates the missing ones from upstream `tree-sitter-*` repos.
+This is what makes by-construction schemas (e.g. the output of a migration) renderable without a CST complement. `panproto-grammars` ships `grammar.json` alongside `node-types.json` and `parser.c` for all 261 vendored grammars; `tools/fetch-grammar-json.py` refreshes them from upstream `tree-sitter-*` repos.
+
+### Emit verification status (0.51.0+)
+
+`emit_pretty` was rewritten in 0.51.0 to drive spacing and indentation from grammar-derived token *roles* (BracketOpen, BracketClose, Separator, Keyword, Operator, Terminal, Immediate) consulted through a pure role-pair adjacency relation, rather than from token-text inspection. As of 0.52.0, source-code emit is verified against a strict oracle — `emit(parse(emit(s))) == emit(s)` plus preservation of the schema's vertex-kind and edge-shape multisets (rejecting degenerate fixed points that drop content to `""`) — over the entire upstream `test/corpus/` of **255 of 261** vendored grammars, up from 16.
+
+`ParserRegistry::emit_verification_status(protocol)` reports the tier per language so downstream tooling can refuse emit on unverified grammars:
+
+| Tier | Meaning |
+|------|---------|
+| `Verified` | A fixed-point / round-trip test exercises emit on representative source. |
+| `Generic` | The grammar is registered and the generic dispatch applies, but no test asserts emit correctness. |
+| `Unsupported` | No `grammar.json` was vendored. |
+
+The six unverified grammars are irreducible without upstream changes (the comment/todotxt/wolfram free-text grammars, less, move, and test). By-construction emit (no parse-history bytes) holds to an AST round-trip bar — the emitted source re-parses to the same kind/edge multiset — rather than byte parity.
 
 ### `ParseEmitLens` (0.40.0+)
 
@@ -227,7 +241,7 @@ Top languages by category:
 | Mobile | Swift, Dart, Objective-C |
 | Scientific | R, Julia, MATLAB, Fortran |
 
-Full list: 259 languages across 11 grammar groups (core, web, systems, jvm, scripting, data, functional, devops, mobile, music, all).
+Full list: 261 languages across 11 grammar groups (core, web, systems, jvm, scripting, data, functional, devops, mobile, music, all).
 
 ## Use cases
 

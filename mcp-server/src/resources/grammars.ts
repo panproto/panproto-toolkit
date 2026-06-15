@@ -1,7 +1,7 @@
 // Grammar resource provides the catalog of supported tree-sitter languages.
 // Registered via the protocols resource module.
 
-export const GRAMMAR_CATALOG = `panproto supports full-AST parsing for 259 programming languages via tree-sitter grammars.
+export const GRAMMAR_CATALOG = `panproto supports full-AST parsing for 261 programming languages via tree-sitter grammars.
 
 Top languages by category:
 

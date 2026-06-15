@@ -97,10 +97,21 @@ The registry is a global static keyed by `(EnrichmentKind, enricher_name)`. Func
 
 ## Layout constraint sorts
 
-A vertex carries layout data if it has constraints with these sort names:
+A vertex carries layout data if it has constraints with these sort names (the predicate is `panproto_gat::is_layout_sort`):
 - `start-byte`, `end-byte`: byte position in the source
 - `interstitial-N`: whitespace/punctuation between adjacent named children
+- `ptrace-N`: anonymous grammar tokens in source order (the variant tag for CHOICE dispatch)
 - `chose-alt-fingerprint`: which CHOICE alternative the parser took
 - `chose-alt-child-kinds`: discriminator for ambiguous alternatives
+- `doc-prefix`: a leading byte run (BOM, line-continuation) before the root
+- `blank-lines-before`: blank-line count before a vertex (a layout sort as of 0.52.1, so `forget_layout` strips it)
 
-`Schema::is_layout_free()` returns true when none of these are present.
+`Schema::is_layout_free()` returns true when none of these are present, and `forget_layout` strips exactly this set. Sorts NOT in this set (e.g. `literal-value`, `pre-alias-symbol`, `field:<name>`) survive `forget_layout` and are what the abstract / by-construction emit path reconstructs from.
+
+## Layout calculus vocabulary (0.52.0)
+
+`panproto-gat` exposes the theory-level vocabulary the emitter targets, re-exported at the crate root:
+
+- `LayoutRole`: the structural role of a token — `BracketOpen`, `BracketClose`, `Separator`, `Keyword`, `Operator`, `Connector`, `Terminal`, plus `Immediate` for `IMMEDIATE_TOKEN` tokens. A role is a fact about the grammar (a `(` the grammar marks as a matched-pair open is `BracketOpen` whatever its character), assigned once during derivation.
+- `Adjacency` (`Tight` / `Space` / `Break`): the pure relation over role pairs. `Adjacency::between(prev, next)` decides spacing from roles alone, with no token-text inspection — the role-pair table the 0.51.0 emit rewrite replaced ad-hoc character checks with.
+- `LayoutSpec` / `RuleLayout`: the grammar-derived payload of the `Layout` enrichment in its derived form (per-rule role assignment, indent markers, separator policy plus the `LayoutPolicy` knobs). The emitter is a model-interpreter over this spec rather than re-deriving roles per call.

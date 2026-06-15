@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-panproto-core = "0.50.0"
+panproto-core = "0.52.1"
 # Optional features:
 # panproto-core = { version = "0.50.0", features = ["full-parse", "git", "tree-sitter"] }

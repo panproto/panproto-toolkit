@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.15.0] - 2026-06-15
+
+Catches the toolkit up across panproto v0.50.3 → v0.52.1. The headline is source-code emit: panproto's `emit_pretty` was rewritten around grammar-derived token roles (0.51.0) and verified against a strict round-trip oracle over the upstream `test/corpus/` of 255 of 261 vendored grammars (0.52.0, up from 16), and 0.52.1 closed the remaining by-construction gaps (line-comment line breaks, opaque token trees, julia paren-form macro calls) plus resynced the Python `_native.pyi` stub to the runtime.
+
+### Changed
+
+- **`skills/full-ast-parsing`**: 259 → 261 languages (BUGS/JAGS vendored in 0.52.0); added an **Emit verification status** section covering the grammar-derived token-role rewrite (0.51.0), the strict 255/261 round-trip oracle (0.52.0), the `ParserRegistry::emit_verification_status()` tiers (`Verified` / `Generic` / `Unsupported`), and the AST-round-trip bar for by-construction emit; corrected "250 vendored grammars" → 261.
+- **`skills/decorate-schemas`**: documented the new **layout calculus vocabulary** (`LayoutRole`, `Adjacency`, `LayoutSpec` / `RuleLayout`) exposed by `panproto-gat` in 0.52.0; completed the layout-constraint-sort list (`ptrace-N`, `doc-prefix`, and `blank-lines-before` — reclassified as a layout sort in 0.52.1) and noted which sorts survive `forget_layout`.
+- **`skills/sdk-rust`**: dependency example bumped to `panproto-core = "0.52"`.
+- **Python SDK API**: verified the toolkit's `diff_and_classify(old, new, protocol)`, `ProtolensChain.instantiate(schema, protocol)`, and `Instance.root`/`node_count`/`arc_count` (properties) / `validate()` (error list) / `from_json` (staticmethod) usages already match the runtime that 0.52.1's `_native.pyi` resync now also advertises — no changes needed.
+- **Counts**: 259 → 261 languages across `README.md`, `mcp-server` grammar/protocol resources, and the `panproto_parse_file` tool description.
+- **Templates**: bumped to panproto v0.52.1 (TS: `@panproto/core ^0.52.1`, Python: `panproto>=0.52.1`, Rust: `panproto-core 0.52.1`).
+- **Version**: MCP server bumped `0.14.0` → `0.15.0`; `README.md` and `mcp-server/README.md` now read "panproto v0.52.1".
+
 ## [0.14.0] - 2026-05-26
 
 Catches the toolkit up across eight panproto releases (v0.45.0 → v0.50.3). The centerpiece is the MCP server security and governance layer: every tool is classified by risk, destructive operations gate on MCP elicitation-based user approval, and all invocations are audit-logged. The server also expands from 41 to 72 tools, covering the full CLI surface including VCS write operations, git bridge, and enrichment management.
