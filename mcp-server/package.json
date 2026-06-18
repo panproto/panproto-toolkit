@@ -20,12 +20,12 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@panproto/core": "^0.55.0"
+    "@panproto/core": "^0.56.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
+    "typescript": "^6.0.3",
     "tsx": "^4.19.0",
-    "@types/node": "^22.0.0"
+    "@types/node": "^25.9.3"
   },
   "repository": {
     "type": "git",
