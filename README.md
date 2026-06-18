@@ -1,10 +1,10 @@
 # panproto-toolkit
 
-> Written for [panproto](https://github.com/panproto/panproto) v0.52.1. See [keeping up to date](#keeping-up-to-date) for version tracking.
+> Written for [panproto](https://github.com/panproto/panproto) v0.55.0. See [keeping up to date](#keeping-up-to-date) for version tracking.
 
 Claude Code skills, agents, an MCP server, project templates, and CI integrations for working with panproto, the schematic version control engine.
 
-panproto treats every schema language (ATProto, OpenAPI, Protobuf, GraphQL, Avro, SQL DDL, and [43 others](https://github.com/panproto/panproto/tree/main/crates/panproto-protocols)) as a view over a single graph format, and can also parse source code in [259 programming languages](https://github.com/panproto/panproto/tree/main/crates/panproto-grammars) via tree-sitter. The same diff/migrate/version-control workflow works on data schemas, API specs, config files, and code structure.
+panproto treats every schema language (ATProto, OpenAPI, Protobuf, GraphQL, Avro, SQL DDL, and [43 others](https://github.com/panproto/panproto/tree/main/crates/panproto-protocols)) as a view over a single graph format, and can also parse source code in [261 programming languages](https://github.com/panproto/panproto/tree/main/crates/panproto-grammars) via tree-sitter. The same diff/migrate/version-control workflow works on data schemas, API specs, config files, and code structure.
 
 ## Quick install
 
@@ -75,7 +75,7 @@ Invoke any skill in Claude Code with `/panproto-<name>`.
 | **sdk-typescript** | `/panproto-sdk-typescript` | Complete @panproto/core TypeScript SDK guide (WASM, 102 functions) |
 | **sdk-python** | `/panproto-sdk-python` | Complete panproto Python SDK guide (PyO3, 32 classes, 34 functions) |
 | **sdk-rust** | `/panproto-sdk-rust` | Complete panproto-core Rust library guide (feature flags, 39-crate workspace) |
-| **sdk-haskell** | `/panproto-sdk-haskell` | Haskell bindings via `panproto-c` (safer-ffi C ABI), Native vs Rust backends |
+| **sdk-haskell** | `/panproto-sdk-haskell` | Complete Haskell SDK guide (full parity over the `panproto-c` C ABI): per-domain capability typeclasses, standard-class integration, builders, the `MonadPanproto` effect layer, optics/lens adaptors |
 
 ### CI integration
 
@@ -177,9 +177,9 @@ See [mcp-server/README.md](mcp-server/README.md) for full documentation.
 
 Project scaffolds for getting started quickly:
 
-- `templates/ts-project/` : TypeScript project with `@panproto/core ^0.52.1`
-- `templates/python-project/` : Python project with `panproto>=0.52.1`
-- `templates/rust-project/` : Rust project with `panproto-core 0.52.1` (edition 2024, rust-version 1.85)
+- `templates/ts-project/` : TypeScript project with `@panproto/core ^0.55.0`
+- `templates/python-project/` : Python project with `panproto>=0.55.0`
+- `templates/rust-project/` : Rust project with `panproto-core 0.55.0` (edition 2024, rust-version 1.85)
 - `templates/github-actions/` : CI workflow templates
 
 ## Learning path

@@ -18,6 +18,7 @@
    - TypeScript: `npm install @panproto/core` (requires Node.js 22+)
    - Python: `pip install panproto` (requires Python 3.13+)
    - Rust: add `panproto-core` to your `Cargo.toml`
+   - Haskell: cabal package `panproto` (full parity as of v0.55.0); build `libpanproto_c` from source via `bindings/haskell/bootstrap/dev-link.sh`, then `cabal build`. See `/panproto-sdk-haskell`.
 
 ## Automated install
 

@@ -41,13 +41,13 @@ Agents are separate sub-processes that Claude can delegate to. They run in isola
 These skills walk you through a specific workflow: `getting-started`, `build-migration`, `convert-data`, `schema-vcs`.
 
 ### Reference skills (look things up)
-These skills provide comprehensive reference material: `expression-language`, `sdk-typescript`, `sdk-python`, `sdk-rust`.
+These skills provide comprehensive reference material: `expression-language`, `sdk-typescript`, `sdk-python`, `sdk-rust`, `sdk-haskell`.
 
 ### CI skills (set up automation)
 These skills generate configuration files: `ci-github-actions`, `ci-pre-commit`, `ci-breaking-gate`.
 
 ## Tips
 
-- Skills show examples in all three SDKs (TypeScript, Python, Rust) plus the CLI. Focus on the one relevant to your project.
+- Skills show examples across the SDKs (TypeScript, Python, Rust, and Haskell at full parity as of v0.55.0) plus the CLI. Focus on the one relevant to your project.
 - Every skill has a "Further Reading" section linking to the tutorial and dev-guide. Follow these links to understand the theory behind what the skill does.
 - If a skill's guidance does not match your situation, tell Claude what is different. Skills provide the starting point; Claude adapts from there.

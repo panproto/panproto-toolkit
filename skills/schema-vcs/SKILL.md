@@ -154,6 +154,17 @@ schema data migrate --backward records/
 # No data loss because complements preserve everything get() discarded
 ```
 
+### Read committed data at a revision (0.54.0+, SDK)
+
+`Repository.data_at(ref)` resolves a branch, tag, or commit-id prefix and returns the data sets committed at that revision **without moving `HEAD`, the index, or the working tree**. It is the data counterpart to reading a committed schema, and the read-only contrast to `checkout --migrate` (which moves `HEAD` and migrates files in place). It is an SDK API, not a CLI command:
+
+```python
+sets = repo.data_at("v2")          # one dict per data set
+for d in sets:
+    print(d["schema_id"], d["record_count"], d["data"])
+repo.add_data("records/")          # record a data set into the VCS
+```
+
 ## Tags and releases
 
 ```bash

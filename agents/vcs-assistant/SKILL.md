@@ -84,7 +84,7 @@ schema data migrate --backward records/ # reverse migration using complements
 schema checkout v2 --migrate            # switch schema AND migrate data
 ```
 
-Guide users through data versioning workflows, explain complement storage (how backward migration preserves all data), and troubleshoot migration failures.
+Guide users through data versioning workflows, explain complement storage (how backward migration preserves all data), and troubleshoot migration failures. To inspect the data committed at a past revision **without** moving `HEAD` or touching the working tree (the read-only contrast to `checkout --migrate`), point users at the SDK `Repository.data_at(ref)` accessor added in 0.54.0; it resolves a branch, tag, or commit-id prefix and returns the committed data sets. There is no CLI equivalent, so it is out of this agent's `schema`-CLI scope.
 
 ### Tagging and releases
 

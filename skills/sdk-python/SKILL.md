@@ -420,9 +420,39 @@ registry.override_grammar("my-lang", ["myext"], language_ptr, node_types_json)
 text = schema.field_text(vertex_id, "operator")  # returns str or None
 ```
 
+## ATProto lexicon parsing (0.53.0+)
+
+Turn an ATProto lexicon document (a dict or a JSON string) into a `Schema` under the builtin `atproto` protocol. Reference properties record a `ref` provenance constraint, so real `app.bsky.*` lexicons validate against the builtin protocol.
+
+```python
+schema = panproto.parse_atproto_lexicon(lexicon_doc)          # dict or JSON str
+schema = panproto.parse_schema_document("atproto", lexicon_doc)  # protocol-dispatching
+schema = panproto.Schema.from_atproto_lexicon(lexicon_doc)    # classmethod form
+```
+
+## Schema to theory extraction (0.53.0+)
+
+Extract the generalized algebraic theory a schema instantiates: one sort per vertex, one unary operation per edge, with primitive value kinds preserved on value-kind vertices (via the `SortKind::Val` vocabulary). Refined scalars, per-field defaults, and reference-versus-containment ride the `Schema` constraint layer and `Edge.kind`, not the theory.
+
+```python
+theory = panproto.theory_of(schema)
+theory = schema.theory(name=None)   # method form; name defaults to the protocol
+```
+
+## Committed data access (0.54.0+)
+
+Record and read back committed data sets through the VCS without dropping to Rust. `data_at` resolves a branch, tag, or commit-id prefix and returns the data committed at that revision, never moving `HEAD`, the index, or the working tree (the data counterpart to reading a committed schema; contrast `checkout_with_data`, which moves `HEAD` and migrates files in place).
+
+```python
+repo.add_data(path)                       # record a data set into the VCS
+sets = repo.data_at("main")               # branch / tag / commit-id prefix
+for d in sets:                            # one dict per data set
+    print(d["schema_id"], d["record_count"], d["data"])
+```
+
 ## SDK surface summary
 
-The Python SDK exposes 32 classes and 34 module-level functions across 16 modules: schema, protocols, mig, hom, check, inst, io, lens, gat, expr, vcs, parse, project, git, convert, error.
+The Python SDK exposes 32 classes and 37 module-level functions across 16 modules: schema, protocols, mig, hom, check, inst, io, lens, gat, expr, vcs, parse, project, git, convert, error. (0.53.0 added `parse_atproto_lexicon`, `parse_schema_document`, and `theory_of`; 0.54.0 added `Repository.data_at` / `Repository.add_data`.)
 
 ## Further Reading
 

@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.16.0] - 2026-06-17
+
+Catches the toolkit up across panproto v0.53.0 → v0.55.0. The headline is the **Haskell SDK reaching full parity** with the Python and TypeScript SDKs (v0.55.0), over a `panproto-c` C ABI expanded to 123 frozen `pp_*` entry points; the two intervening releases added ATProto lexicon parsing and schema→theory extraction to the Python SDK (v0.53.0) and a VCS `data_at` committed-data read accessor (v0.54.0).
+
+### Changed
+
+- **`skills/sdk-haskell`**: rewritten from a pre-parity stub (v0.41.0, three typeclasses, thread-local slab) to the full v0.55.0 surface: the per-domain capability typeclasses (`MigrationBackend`, `LensBackend`, `GatBackend`, …) over `Native` and `Rust` backends; the **process-global** handle slab (handles stay valid across OS threads under GHC's threaded RTS); standard-class integration (`Migration` as an associative `Semigroup` with the per-schema `identityMigrationOn` identity rather than a `Monoid`, `ProtolensChain` as a `Monoid`/`Category`, `OpticKind` as a lattice `Monoid`, the `SomePanprotoError` exception hierarchy, `Hashable`/`Eq`/`Ord`); `State`-monad builders; the built-in `MonadPanproto` effect layer plus the `effectful` effect; the delta-lens `optics`/`lens` adaptors; the cabal flag matrix; and the `dev-link.sh` / `fetch-bindist.sh` bootstrap.
+
+### Added
+
+- **`skills/sdk-python`**: ATProto lexicon parsing (`parse_atproto_lexicon`, `parse_schema_document`, `Schema.from_atproto_lexicon`) and schema→theory extraction (`theory_of`, `Schema.theory`) from v0.53.0; committed-data access (`Repository.data_at`, `Repository.add_data`) from v0.54.0. Surface summary updated to 37 module-level functions.
+- **`skills/schema-vcs`** and **`agents/vcs-assistant`**: documented `Repository.data_at(ref)` (v0.54.0) — reads the data sets committed at a branch/tag/commit-id without moving `HEAD` or the working tree, the read-only contrast to `checkout --migrate`. Noted that it is an SDK API with no CLI equivalent.
+- **Haskell as a first-class SDK** across the docs: `README.md` (SDK-guides table, language count corrected to 261), `docs/installation.md` (build-from-source path), and `docs/skills-guide.md` (reference-skill list and the "examples across the SDKs" note).
+
+### Changed (versions)
+
+- **Templates**: bumped to panproto v0.55.0 (TS: `@panproto/core ^0.55.0`, Python: `panproto>=0.55.0`, Rust: `panproto-core 0.55.0`).
+- **MCP server**: own version `0.15.0` → `0.16.0`; `README.md` and `mcp-server/README.md` now read "panproto v0.55.0". The `schema` CLI surface the server wraps is unchanged across v0.53.0–v0.55.0 (the new features are SDK-only), so the 72-tool set is unchanged.
+
+### Changed (post-release)
+
+- **`mcp-server/package.json`**: the (unused at runtime; the server shells out to the `schema` CLI) `@panproto/core` dependency bumped `^0.52.1` → `^0.55.0`, now that `@panproto/core@0.55.0` is published to npm.
+
+### Pending (manual)
+
+- **`@panproto/mcp-server@0.16.0` npm publish**: still a manual `npm login` step (the toolkit CI publish token lacks `@panproto` scope). Run `npm install && npm run build && npm publish` from `mcp-server/` to regenerate the lockfile against `@panproto/core@0.55.0` and publish.
+
 ## [0.15.0] - 2026-06-15
 
 Catches the toolkit up across panproto v0.50.3 → v0.52.1. The headline is source-code emit: panproto's `emit_pretty` was rewritten around grammar-derived token roles (0.51.0) and verified against a strict round-trip oracle over the upstream `test/corpus/` of 255 of 261 vendored grammars (0.52.0, up from 16), and 0.52.1 closed the remaining by-construction gaps (line-comment line breaks, opaque token trees, julia paren-form macro calls) plus resynced the Python `_native.pyi` stub to the runtime.
