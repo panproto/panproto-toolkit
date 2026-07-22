@@ -67,8 +67,13 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
+      # Trusted Publishing (OIDC) needs npm >= 11.5.1; Node 22 ships npm 10.x.
+      # Without this the publish silently falls back to token auth and fails.
+      - run: npm install -g npm@latest
+
       - run: npm install
       - run: npm run build
+      # No NODE_AUTH_TOKEN: auth comes from the job's OIDC identity, exchanged
+      # for a short-lived credential against the npm Trusted Publisher
+      # configured for @panproto/mcp-server. --provenance requires OIDC anyway.
       - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
