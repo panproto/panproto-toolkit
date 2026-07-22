@@ -161,9 +161,20 @@ schema data migrate --backward records/
 ```python
 sets = repo.data_at("v2")          # one dict per data set
 for d in sets:
-    print(d["schema_id"], d["record_count"], d["data"])
-repo.add_data("records/")          # record a data set into the VCS
+    # each dict carries schema_id, data, record_count, and key
+    print(d["schema_id"], d["record_count"], d["key"], d["data"])
 ```
+
+`Repository.add_data(path, key=None)` records a data set into the VCS. The optional `key` (0.56.0+) attaches a caller identifier to the set (a source path, an AT-URI, or any string) so `data_at` can map the committed set back to a downstream record; when `key` is `None` it falls back to the source path. The key is carried forward unchanged across data migration (forward, backward, and directory). It surfaces as the `key` field on each `data_at` dict:
+
+```python
+repo.add_data("records/")                     # key defaults to the source path
+repo.add_data("records/post-1.json", key="at://did:plc:abc/app.bsky.feed.post/1")
+```
+
+Rust callers pass `None` for the previous behavior: `repo.add_data(path, None)`.
+
+**Data-only and protocol-only commits (0.56.0+).** When no schema is staged, `Repository.commit` no longer raises `NothingStaged`. It builds a data-only or protocol-only commit that carries `HEAD`'s schema forward with no migration. This lets you re-record records of an already-committed type and then diff revisions by data alone.
 
 ## Tags and releases
 

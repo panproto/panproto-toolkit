@@ -83,6 +83,8 @@ in
 - `L.compute "target" "expr"` : compute a new field from the parent fiber
 - `L.compute_invertible "target" "expr" "inverse"` : with inverse
 
+These value-level steps (and the structural `L.hoist` / `L.nest` below) compile to *field transforms* rather than to structural chain steps. Before 0.59.0 the WASM boundary discarded that half, so a document whose substantive step computed a field or regrouped flat fields into a nested object compiled to an empty chain from the TypeScript/JavaScript SDK and `get` returned its input untouched. They now compile through and apply. Note that folding a value transform into an otherwise structurally-bijective migration means it no longer classifies as an `Iso` optic unless the transform is itself lossless (`CoercionClass::Iso`); a lossy transform makes the composite a `Lens` (0.60.0+).
+
 ### Structural combinators
 - `L.hoist "parent" "intermediate" "child"` : flatten nesting
 - `L.nest "parent" "child" "wrapper" "kind" "edge"` : add nesting
@@ -149,6 +151,17 @@ let compiled = compile(&doc, "record:body", &|id| resolve_lens(id))?;
 // compiled.field_transforms: HashMap<Name, Vec<FieldTransform>>
 // compiled.auto_spec: Option<AutoSpec> (if auto body variant)
 ```
+
+## Loading and compiling (TypeScript/JavaScript, 0.59.0+)
+
+```typescript
+// source: a JS object, JSON/YAML string, or bytes; bodyVertex: parent for field-level steps
+const chain = pp.compileLensDocument(doc, 'app.bsky.feed.post:body' /*, 'yaml' */);
+const lens = chain.instantiate(schema);       // -> LensHandle
+const { view, complement } = lens.get(record); // value transforms run here
+```
+
+`compileLensDocument` now carries the compiled field transforms through the WASM boundary, so value-level and hoist/nest steps take effect on `get`/`put`. They do not appear in `chain.toJson()`; call `chain.fieldTransforms()` (returns `Record<string, unknown[]>` keyed by parent vertex) to list them. Nickel source is not accepted directly (its contract imports need a filesystem) — precompile Nickel to JSON on the host and pass that.
 
 ## Expressions
 

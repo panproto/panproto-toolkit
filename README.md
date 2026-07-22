@@ -1,6 +1,6 @@
 # panproto-toolkit
 
-> Written for [panproto](https://github.com/panproto/panproto) v0.55.0. See [keeping up to date](#keeping-up-to-date) for version tracking.
+> Written for [panproto](https://github.com/panproto/panproto) v0.60.0. See [keeping up to date](#keeping-up-to-date) for version tracking.
 
 Claude Code skills, agents, an MCP server, project templates, and CI integrations for working with panproto, the schematic version control engine.
 
@@ -177,9 +177,9 @@ See [mcp-server/README.md](mcp-server/README.md) for full documentation.
 
 Project scaffolds for getting started quickly:
 
-- `templates/ts-project/` : TypeScript project with `@panproto/core ^0.55.0`
-- `templates/python-project/` : Python project with `panproto>=0.55.0`
-- `templates/rust-project/` : Rust project with `panproto-core 0.55.0` (edition 2024, rust-version 1.85)
+- `templates/ts-project/` : TypeScript project with `@panproto/core ^0.60.0`
+- `templates/python-project/` : Python project with `panproto>=0.60.0`
+- `templates/rust-project/` : Rust project with `panproto-core 0.60.0` (edition 2024, rust-version 1.85)
 - `templates/github-actions/` : CI workflow templates
 
 ## Learning path

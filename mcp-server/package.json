@@ -1,6 +1,6 @@
 {
   "name": "@panproto/mcp-server",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "MCP server exposing panproto schema operations with tool annotations, approval gates, and audit logging",
   "license": "MIT",
   "type": "module",
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@panproto/core": "^0.55.0"
+    "@panproto/core": "^0.60.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

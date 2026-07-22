@@ -10,6 +10,8 @@ argument-hint: "<from-protocol> <to-protocol>"
 
 You are helping a user convert data between formats. panproto supports 50 protocols and 50+ I/O codecs. The conversion pipeline is: parse, represent as schema graph, migrate, emit.
 
+The JSON, XML, YAML, TOML, and CSV codecs are value-preserving: parsing an instance and re-emitting it keeps the structure the protocol layer round-trips on, so a migration over a YAML, TOML, or CSV file keeps its shape instead of losing it to a bare re-serialization.
+
 ## Step 1: Identify source and target
 
 Ask the user for:

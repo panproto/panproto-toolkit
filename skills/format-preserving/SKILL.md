@@ -37,6 +37,8 @@ bytes ← emit_from_schema ← CST Schema ← injection lens ← modified WInsta
 | CSV | `tree-sitter-csv` | Line endings, quoting style, header presence |
 | TSV | `tree-sitter-tsv` | Line endings, comment lines |
 
+The byte-identical round-trips above require the `tree-sitter` feature. Independently of that feature, the JSON, XML, YAML, TOML, and CSV codecs registered with the built-in protocols are *value-preserving*: parsing and re-emitting an instance keeps the structure the protocol layer round-trips on, so a migration over a YAML, TOML, or CSV instance keeps its shape instead of losing it to a bare re-serialization. Value preservation is a weaker guarantee than byte-identical layout preservation, but it holds on the plain codec path without a CST complement.
+
 ## Usage
 
 ### Rust

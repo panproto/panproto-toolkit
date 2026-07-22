@@ -55,21 +55,21 @@ if record.age >= 18 then "adult" else "minor"
 
 -- Pattern matching
 case record.status of
-  "active" -> true
-  "deleted" -> false
-  _ -> true
+  "active" -> True
+  "deleted" -> False
+  _ -> True
 
 -- List operations
 map (\x -> x * 2) [1, 2, 3]
 filter (\x -> x > 0) numbers
-foldl (\acc x -> acc + x) 0 numbers
+fold (\acc -> \x -> acc + x) 0 numbers
 
 -- String operations
-toUpper "hello"          -- "HELLO"
-toLower "HELLO"          -- "hello"
+upper "hello"           -- "HELLO"
+lower "HELLO"           -- "hello"
 trim "  hello  "         -- "hello"
-split "," "a,b,c"        -- ["a", "b", "c"]
-join ", " ["a", "b"]     -- "a, b"
+split "a,b,c" ","        -- ["a", "b", "c"]
+join ["a", "b"] ", "     -- "a, b"
 ```
 
 ## Applying transforms
@@ -79,7 +79,7 @@ join ", " ["a", "b"]     -- "a, b"
 ```bash
 # Add enrichments to a schema
 schema enrich add-coercion string_kind int_kind \
-  --expr '\text -> toUpper text'
+  --expr '\text -> upper text'
 
 schema enrich add-default post:body.bio \
   --expr '""'
@@ -104,7 +104,7 @@ const chain = p.protolensChain(oldSchema, newSchema, {
       target: 'user.age',
       from: 'string',
       to: 'integer',
-      expr: '\\s -> parseInt s',
+      expr: '\\s -> str_to_int s',
     },
     {
       type: 'ConditionalSurvival',
@@ -128,7 +128,7 @@ lens, quality = panproto.auto_generate_lens(
             target="user.age",
             from_kind="string",
             to_kind="integer",
-            expr='\\s -> parseInt s'
+            expr='\\s -> str_to_int s'
         ),
     ]
 )
@@ -154,7 +154,7 @@ let transforms = vec![
     },
     FieldTransform::ApplyExpr {
         key: "user.age".into(),
-        expr: parse_expr(r#"\s -> parseInt s"#),
+        expr: parse_expr(r#"\s -> str_to_int s"#),
         inverse: None,
         coercion_class: panproto_gat::CoercionClass::Opaque,
     },
@@ -172,6 +172,37 @@ Navigate and transform nested data:
 -- Transform at a path
 \record -> { ...record, address: { ...record.address, zip: trim record.address.zip } }
 ```
+
+## List- and record-valued transforms
+
+As of 0.60.0 field transforms are structure-preserving in both directions: an expression can read from, and return, a list-valued or nested-object-valued field. Before 0.60.0 such a transform silently did nothing (no error, no change) and only scalar fields worked. This matters most for ATProto records, which keep arrays and nested objects inline rather than as child vertices.
+
+The list builtins are function-first in surface syntax (`map f xs`, `filter f xs`, `fold f init xs`). Record literals use `=` for fields.
+
+```rust
+// map/fold/filter over an array field (ApplyExpr rewrites the field in place)
+apply_expr("nums", "map (\\x -> x + 1) nums")            // [1,2,3] -> [2,3,4]
+apply_expr("objs", "map (\\o -> o.a) objs")              // project a field from an array of objects
+
+// field access through a nested object (ComputeField reads a new field)
+compute_field("out", "nested.a")                          // { a = 7, b = 70 } -> 7
+compute_field("total", "fold (\\x -> \\y -> x + y) 0 nums")
+compute_field("big", "filter (\\x -> x > 1) nums")        // [1,2,3] -> [2,3]
+
+// an expression that BUILDS a list of records is written back as structured data
+// (a flat->nested regroup, moving fields one level deeper)
+compute_field(
+    "regrouped",
+    "map (\\o -> { outer = o.a, inner = { deep = o.b } }) objs",
+)
+// [{a=1,b=10},{a=2,b=20}] -> [{outer=1,inner={deep=10}},{outer=2,inner={deep=20}}]
+```
+
+Because the value written back is structured rather than flattened, a later transform can read an earlier one's output, and `contains xs elem` tests element membership on a list-valued field.
+
+## Failed transforms are reported
+
+Also as of 0.60.0, a field transform whose expression cannot evaluate raises an error naming the field (Rust `RestrictError::FieldTransformFailed`) rather than leaving the field untouched and reporting success. A transform that references a missing field (e.g. `compute_field("out", "missing_field.a")`) now fails the migration loudly instead of silently doing nothing.
 
 ## Conditional survival
 
