@@ -70,7 +70,7 @@ Every tool invocation is recorded in a session-scoped, append-only audit log wit
 
 ## Tools (72)
 
-Tool descriptions are accurate against panproto v0.55.0. The `schema` CLI surface the server wraps is unchanged across v0.53.0–v0.55.0 (those releases added Python-SDK and Haskell-SDK features, a VCS `data_at` read API, and ATProto lexicon parsing, none of which alter the CLI), so the tool set is unchanged. All tools are registered via `registerTool` with deterministic alphabetical ordering for LLM prompt cache consistency.
+Tool descriptions are accurate against panproto v0.60.0. The `schema` CLI flag surface the server wraps is unchanged across v0.56.0–v0.60.0 (those releases added SDK APIs, expression-language builtins, and engine-behavior improvements — data-only commits, list/record field transforms, tighter optic-kind classification — that flow through existing flags rather than new ones), so the tool set is unchanged. All tools are registered via `registerTool` with deterministic alphabetical ordering for LLM prompt cache consistency.
 
 ### Schema (6)
 

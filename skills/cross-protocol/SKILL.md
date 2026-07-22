@@ -21,6 +21,22 @@ Every protocol's schemas are represented as the same mathematical structure (a m
 
 The schema graph is the universal intermediate representation. Some constructs translate cleanly; others are approximated or lost.
 
+## Cross-document references
+
+A schema-document parser normally sees one document at a time, so a reference from one document into another (say the ATProto lexicon `pub.layers.annotation.annotationLayer` referencing `pub.layers.defs#spatioTemporalAnchor`) resolves to an opaque `"ref"` placeholder vertex carrying no fields, and a lens has nothing typed to bind to. Parse a whole bundle instead: every document's definitions are registered before any document's structure is parsed, so an in-bundle ref lands on the real, typed vertex, while a ref whose target is in no document of the bundle stays a placeholder (which marks it as genuinely external).
+
+**TypeScript:**
+```typescript
+const schema = p.parseSchemaBundle('atproto', [annotationLexicon, defsLexicon]);
+```
+
+**Python:**
+```python
+schema = panproto.parse_schema_bundle("atproto", [annotation_lexicon, defs_lexicon])
+```
+
+Single-document parsing (`parseLexicon` / `parse_lexicon`) is unchanged; it is now the one-document case of the bundle parser. Cross-document resolution currently ships for the `atproto` protocol, but the entry point is protocol-neutral (`bundleParserProtocols` reports the supported set).
+
 ## Step 1: Assess compatibility
 
 Before translating, check what will be preserved:

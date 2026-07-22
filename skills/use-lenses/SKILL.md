@@ -174,6 +174,8 @@ Auto-generation classifies the transform quality:
 | Affine | Partial function (some source elements have no target) | May fail on some inputs |
 | General optic | None of the above | Complement needed, may be lossy |
 
+**Iso requires more than a structural bijection (0.60.0+).** `optic_kind` used to return `Iso` whenever the schema mapping was a structural bijection (every vertex and edge survives, no variant changes), ignoring the value transforms the migration carries. It now returns `Iso` only when both hold: the schema map is bijective **and** the composite of every value transform is itself lossless (`CoercionClass::Iso`). A structurally-bijective migration that carries a lossy value transform — a `compute_field`, or a scalar coercion classified `Retraction`, `Projection`, or `Opaque` — is now classified `Lens`, not `Iso`, since its value-level action does not round-trip without the complement.
+
 ## Step 2: Use get/put
 
 ### Forward (get): project data from old to new schema
@@ -321,6 +323,23 @@ let L = import "panproto/lens.ncl" in
 ```
 
 See `/lens-dsl` for the full DSL reference.
+
+### Compiling a lens document from TypeScript/JavaScript (0.59.0+)
+
+From the SDK, compile a lens document with `compileLensDocument(source, bodyVertex)`, then `instantiate(schema)` to get a `LensHandle`:
+
+```typescript
+const chain = pp.compileLensDocument({
+  id: 'demo.regroup',
+  source: 'v1', target: 'v2',
+  steps: [{ compute_field: { target: 'fullName', kind: 'string', expr: 'concat firstName " " lastName' } }],
+}, 'app.bsky.feed.post:body');
+
+const lens = chain.instantiate(schema);
+const { view, complement } = lens.get(record); // computes fullName
+```
+
+A lens document's value-level steps — `apply_expr`, `compute_field`, `hoist_field`, `nest_field` — used to be discarded at the WASM boundary, so a JS caller could author only structural lenses (rename/drop/etc.): a document whose substantive step computed a field or regrouped flat fields into a nested object compiled to an empty chain and `get` returned its input untouched. `compileLensDocument` now carries the value transforms through, `instantiate().get()` evaluates them and `put()` inverts them. They do **not** appear in `toJson()`; call `chain.fieldTransforms()` (returns `Record<string, unknown[]>`, keyed by parent vertex) to list them and confirm such a step survived compilation.
 
 ## Further Reading
 

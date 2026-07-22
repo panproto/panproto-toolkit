@@ -20,11 +20,11 @@ schema expr eval --instance records.json --schema schema.json \
 
 # Project specific fields
 schema expr eval --instance records.json --schema schema.json \
-  'map (\r -> { name: r.name, email: r.email }) records'
+  'map (\r -> { name = r.name, email = r.email }) records'
 
 # Combined filter + project
 schema expr eval --instance records.json --schema schema.json \
-  'map (\r -> { name: r.name }) (filter (\r -> r.active) records)'
+  'map (\r -> { name = r.name }) (filter (\r -> r.active) records)'
 ```
 
 ### TypeScript
@@ -83,19 +83,18 @@ Predicates are expressions that return a boolean:
 \r -> r.role == "admin" || r.role == "moderator"
 \r -> not (r.deleted)
 
--- String matching
-\r -> contains "smith" (toLower r.lastName)
-\r -> startsWith "user_" r.id
-\r -> regex "^[A-Z]{2}[0-9]{4}$" r.code
+-- String matching (contains takes the haystack first, then the needle)
+\r -> contains (lower r.lastName) "smith"
+\r -> slice r.id 0 5 == "user_"   -- prefix test; slice is slice(s, start, end)
 
 -- Null checks
-\r -> r.email /= null
-\r -> hasField "phone" r
+\r -> r.email /= Nothing
+\r -> hasField r "phone"
 
--- List membership
-\r -> elem r.status ["active", "pending"]
+-- List membership (the list overload of contains: contains xs x)
+\r -> contains ["active", "pending"] r.status
 \r -> length r.tags > 0
-\r -> any (\t -> t == "urgent") r.tags
+\r -> contains r.tags "urgent"
 ```
 
 ## Projection expressions
@@ -104,20 +103,20 @@ Project specific fields or compute new ones:
 
 ```haskell
 -- Simple field projection
-\r -> { name: r.name, email: r.email }
+\r -> { name = r.name, email = r.email }
 
 -- Nested access
-\r -> { city: r.address.city, zip: r.address.zip }
+\r -> { city = r.address.city, zip = r.address.zip }
 
 -- Computed fields
 \r -> {
-  fullName: r.firstName ++ " " ++ r.lastName,
-  ageGroup: if r.age >= 18 then "adult" else "minor",
-  tagCount: length r.tags
+  fullName = r.firstName ++ " " ++ r.lastName,
+  ageGroup = if r.age >= 18 then "adult" else "minor",
+  tagCount = length r.tags
 }
 
 -- Rename fields
-\r -> { displayName: r.name, createdDate: r.createdAt }
+\r -> { displayName = r.name, createdDate = r.createdAt }
 ```
 
 ## Aggregation
@@ -126,21 +125,13 @@ Project specific fields or compute new ones:
 -- Count
 length (filter (\r -> r.active) records)
 
--- Sum
-foldl (\acc r -> acc + r.amount) 0 records
+-- Sum (fold surface order is `fold f z xs`; f is curried: \acc -> \x -> ...)
+fold (\acc r -> acc + r.amount) 0 records
 
 -- Average
-let total = foldl (+) 0 (map (\r -> r.score) records)
+let total = fold (\acc x -> acc + x) 0 (map (\r -> r.score) records)
     count = length records
-in toFloat total / toFloat count
-
--- Group by (manual)
-let groups = foldl (\acc r ->
-  let key = r.department
-      existing = getField key acc
-  in setField key (existing ++ [r]) acc
-) {} records
-in groups
+in int_to_float total / int_to_float count
 ```
 
 ## Graph traversal
@@ -148,15 +139,15 @@ in groups
 For graph-shaped instances (not just flat records), use edge-following syntax:
 
 ```haskell
--- Follow edges from a vertex
-\v -> v -> "prop"           -- follow "prop" edges from v
-\v -> v -> "ref-target"     -- follow "ref-target" edges
+-- Follow edges from a vertex (the `edge` builtin takes a node then an edge kind)
+\v -> edge v "prop"            -- follow "prop" edges from v
+\v -> edge v "ref-target"      -- follow "ref-target" edges
 
 -- Multi-hop
-\v -> v -> "record-schema" -> "prop"
+\v -> edge (edge v "record-schema") "prop"
 
--- Collect all reachable vertices
-\root -> flatten (map (\child -> child -> "prop") (root -> "record-schema"))
+-- Collect all reachable vertices (flat_map replaces flatten . map)
+\root -> flat_map (\child -> edge child "prop") (edge root "record-schema")
 ```
 
 ## Working with W-type instances
@@ -168,11 +159,11 @@ W-type (tree-shaped) instances have a root node with children organized into fan
 \inst -> inst.root
 
 -- Access children via fan
-\node -> node.children          -- all children
-\node -> node.children[0]       -- first child
+\node -> node.children              -- all children
+\node -> head node.children         -- first child
 
 -- Navigate by edge kind
-\node -> node -> "record-schema"  -- children via this edge kind
+\node -> edge node "record-schema"  -- children via this edge kind
 ```
 
 ## Fiber operations

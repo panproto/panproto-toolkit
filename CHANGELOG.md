@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.17.0] - 2026-07-22
+
+Catches the toolkit up across panproto v0.56.0 → v0.60.0, and corrects two skills whose expression-language examples documented an API panproto does not have.
+
+### Fixed
+
+- **`skills/expression-language`**: the builtin catalogue was fictional — it documented Haskell-Prelude-style names panproto never had (`toUpper`, `substring`, `startsWith`, `endsWith`, `regex`, `foldl`/`foldr`, `init`, `last`, `take`, `drop`, `sort`, `unique`, `flatten`, `zip`, `enumerate`, `any`, `all`, `elem`, `lookup`, `parseInt`, `parseFloat`, `toString`). Replaced it with the real 60-builtin catalogue verified against `resolve_builtin` in the parser and the `BuiltinOp` signatures: correct names (`upper`/`lower`, `slice`, `str_to_int`, the single `fold`, `flat_map`, the coercions, type-inspection, graph-traversal), literals (`True`/`False`/`Nothing`, not `true`/`false`/`null`), record syntax (`{ a = 1 }`, not `{ a: 1 }`), the pipe operator (`&`), and function-first surface order for `map`/`filter`/`fold`.
+- **`skills/query-instances`**: the same fictional builtins and syntax in the query examples, corrected the same way. Membership predicates now use the real `contains [list] elem` overload; a prefix test uses `slice s 0 n == "…"`; examples that could not be expressed in the real language (a `regex` predicate, a dynamic-string-key group-by) were dropped rather than faked.
+- **`skills/field-transforms`**: leftover fictional names in the expression cheat-sheet (`foldl`, `toUpper`/`toLower`, `parseInt`) and backwards `split`/`join` argument order corrected.
+
+### Added
+
+- **`skills/expression-language`**: the `range(start, stop)` builtin and its `[a..b]` surface syntax (both bounds inclusive; `[a..]` unsupported), and the `contains` overload — substring on a string, exact-element membership on a list (panproto v0.60.0).
+- **`skills/field-transforms`**: list- and record-valued transforms now work. A transform whose expression reads or returns an array or nested-object field used to silently no-op (scalar-only); as of v0.60.0 the value/expression conversion is structure-preserving, so `map`/`fold`/`filter`, field projection, and flat-to-nested regroups over inline ATProto arrays and objects apply. Also: a field transform that fails to evaluate is now reported (`RestrictError::FieldTransformFailed`) instead of silently succeeding.
+- **`skills/use-lenses`, `skills/lens-dsl`**: value-transform lens steps (`apply_expr`, `compute_field`, `hoist_field`, `nest_field`) are reachable from the TypeScript/JavaScript SDK via `compileLensDocument` and now apply through `get`/`put` (v0.59.0); `chain.fieldTransforms()` lists them. `optic_kind` now classifies a structurally-bijective migration carrying a lossy value transform as `Lens`, not `Iso` (v0.60.0).
+- **`skills/cross-protocol`, `skills/sdk-python`**: cross-document schema references resolve via bundle parsing — `parseSchemaBundle(protocol, docs)` / `parse_schema_bundle(...)` (v0.59.0), so an ATProto lexicon ref into a sibling document lands on a real typed vertex instead of an opaque placeholder.
+- **`skills/schema-vcs`**: `Repository.add_data(path, key=None)` records an optional per-record caller key carried across data migration, and data-only / protocol-only commits no longer raise `NothingStaged` (v0.56.0).
+- **`skills/convert-data`, `skills/format-preserving`**: the JSON/XML/YAML/TOML/CSV codecs are documented as value-preserving (v0.57.0).
+
+### Changed (versions)
+
+- **Templates**: bumped to panproto v0.60.0 (TS: `@panproto/core ^0.60.0`, Python: `panproto>=0.60.0`, Rust: `panproto-core 0.60.0`).
+- **MCP server**: own version `0.16.0` → `0.17.0` (and the `server.ts` version literal, previously stranded at `0.15.0`, brought into sync); `README.md` and `mcp-server/README.md` now read panproto v0.60.0. The `schema` CLI flag surface the server wraps is unchanged across v0.56.0–v0.60.0 (the changes flow through existing flags), so the tool set is unchanged.
+
 ## [0.16.0] - 2026-06-17
 
 Catches the toolkit up across panproto v0.53.0 → v0.55.0. The headline is the **Haskell SDK reaching full parity** with the Python and TypeScript SDKs (v0.55.0), over a `panproto-c` C ABI expanded to 123 frozen `pp_*` entry points; the two intervening releases added ATProto lexicon parsing and schema→theory extraction to the Python SDK (v0.53.0) and a VCS `data_at` committed-data read accessor (v0.54.0).

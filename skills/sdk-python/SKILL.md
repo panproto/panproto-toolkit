@@ -430,6 +430,12 @@ schema = panproto.parse_schema_document("atproto", lexicon_doc)  # protocol-disp
 schema = panproto.Schema.from_atproto_lexicon(lexicon_doc)    # classmethod form
 ```
 
+Parse a bundle of documents together (0.59.0+) so that references across documents resolve to real, typed vertices instead of opaque `"ref"` placeholders. Every document's definitions are registered before any document's structure is parsed; a ref whose target is in no document of the bundle stays a placeholder, marking it genuinely external. Single-document parsing is the one-document case of it, unchanged.
+
+```python
+schema = panproto.parse_schema_bundle("atproto", [referring_doc, referenced_doc])
+```
+
 ## Schema to theory extraction (0.53.0+)
 
 Extract the generalized algebraic theory a schema instantiates: one sort per vertex, one unary operation per edge, with primitive value kinds preserved on value-kind vertices (via the `SortKind::Val` vocabulary). Refined scalars, per-field defaults, and reference-versus-containment ride the `Schema` constraint layer and `Edge.kind`, not the theory.
@@ -452,7 +458,7 @@ for d in sets:                            # one dict per data set
 
 ## SDK surface summary
 
-The Python SDK exposes 32 classes and 37 module-level functions across 16 modules: schema, protocols, mig, hom, check, inst, io, lens, gat, expr, vcs, parse, project, git, convert, error. (0.53.0 added `parse_atproto_lexicon`, `parse_schema_document`, and `theory_of`; 0.54.0 added `Repository.data_at` / `Repository.add_data`.)
+The Python SDK exposes 32 classes and 37 module-level functions across 16 modules: schema, protocols, mig, hom, check, inst, io, lens, gat, expr, vcs, parse, project, git, convert, error. (0.53.0 added `parse_atproto_lexicon`, `parse_schema_document`, and `theory_of`; 0.54.0 added `Repository.data_at` / `Repository.add_data`; 0.59.0 added `parse_schema_bundle` for cross-document reference resolution.)
 
 ## Further Reading
 
