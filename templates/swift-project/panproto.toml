@@ -1,0 +1,24 @@
+# Project manifest for the panproto CLI.
+#
+# `schema compat`, `schema diff`, and `schema add` walk up from the path
+# they are given to the nearest `panproto.toml`. When every package
+# declares the same protocol, the documents under those packages are
+# parsed as one bundle, so a reference from one document to another
+# resolves to the real target vertex rather than to a placeholder.
+#
+# The manifest is authoritative about its own protocol: a `--protocol`
+# that disagrees with it is a load error, not a silent override.
+#
+# `exclude` holds globs resolved against this directory, so a bare name
+# matches only at the root and a nested one needs `**/`. SwiftPM's own
+# `.build` and `.swiftpm` need no entry either way: the walk skips every
+# name beginning with a dot before it consults this list at all.
+
+[workspace]
+name = "my-panproto-app"
+exclude = ["**/Pods", "**/Carthage", "**/DerivedData"]
+
+[[package]]
+name = "schemas"
+path = "schemas"
+protocol = "atproto"

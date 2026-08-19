@@ -23,11 +23,11 @@ This clones the repo, symlinks the skills, CI integrations, and agents into your
 
 | Component | Count | Description |
 |-----------|-------|-------------|
-| [Skills](#skills) | 30 | Claude Code slash commands for panproto workflows |
+| [Skills](#skills) | 31 | Claude Code slash commands for panproto workflows |
 | [CI skills](#ci-integration) | 3 | The `ci-integrations/` directory, installed as three more slash commands |
 | [Agents](#agents) | 6 | Specialized sub-agents for focused analysis |
 | [MCP server](#mcp-server) | 72 tools | Model Context Protocol server with sandboxing and approvals |
-| [Templates](#templates) | 4 | Project scaffolds (TypeScript, Python, Rust, GitHub Actions) |
+| [Templates](#templates) | 5 | Project scaffolds (TypeScript, Python, Rust, Swift, GitHub Actions) |
 
 ## Skills
 
@@ -76,6 +76,7 @@ Invoke any skill in Claude Code with `/panproto-<name>`.
 | **sdk-python** | `/panproto-sdk-python` | Complete panproto Python SDK guide (PyO3, 47 classes, 41 functions) |
 | **sdk-rust** | `/panproto-sdk-rust` | Complete panproto-core Rust library guide (feature flags, crate layout, the span search) |
 | **sdk-haskell** | `/panproto-sdk-haskell` | Complete Haskell SDK guide (full parity over the `panproto-c` C ABI): per-domain capability typeclasses, standard-class integration, builders, the `MonadPanproto` effect layer, optics/lens adaptors |
+| **sdk-swift** | `/panproto-sdk-swift` | Complete Swift SDK guide (SwiftPM package over the same C ABI): the six products, the `PanprotoEngine` global actor every engine call is isolated to, the fourteen handle classes, result-builder DSLs for schemas, migrations, and theories, typed `throws(PanprotoError)`, and the `PANPROTO_PARSE`/`PANPROTO_PROJECT`/`PANPROTO_GIT` package traits |
 
 ### CI integration
 
@@ -180,6 +181,7 @@ Project scaffolds for getting started quickly:
 - `templates/ts-project/` : TypeScript project with `@panproto/core ^0.71.0`
 - `templates/python-project/` : Python project with `panproto>=0.71.0`
 - `templates/rust-project/` : Rust project with `panproto-core 0.71.0` (edition 2024, rust-version 1.85)
+- `templates/swift-project/` : Swift package depending on `panproto` 0.71.0 through the [`panproto-swift`](https://github.com/panproto/panproto-swift) mirror (Swift 6.1, macOS 14 and iOS 17)
 - `templates/github-actions/` : CI workflow templates
 
 ## Learning path
