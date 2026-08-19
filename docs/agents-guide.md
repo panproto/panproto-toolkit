@@ -11,8 +11,8 @@ Agents are specialized Claude Code sub-processes that handle focused analysis ta
 Analyzes two schema versions and recommends a migration strategy. The advisor:
 - Computes the structural diff between schemas
 - Classifies the change (compatible, backward-compatible, breaking)
-- Attempts automatic lens generation
-- If auto-generation fails, explains why and suggests manual combinator sequences
+- Runs the span search, which reports how much of the source has an image in the target rather than refusing when no total morphism exists
+- Attempts automatic lens generation and reads the certificate: whether the answer was proven optimal, whether the right leg embeds, and what quality interval the search established
 - Produces a step-by-step migration plan with CLI commands and SDK code
 
 **When Claude uses it**: when you ask "how do I migrate from schema A to schema B?" or "what is the best migration strategy for this change?"
@@ -21,7 +21,7 @@ Analyzes two schema versions and recommends a migration strategy. The advisor:
 
 Checks whether schemas are compatible across protocol boundaries. The checker:
 - Parses schemas from potentially different protocols into the universal representation
-- Computes structural overlap
+- Computes the largest common induced sub-schema
 - Reports which constructs translate cleanly, which are approximated, and which are lost
 - Tests migration feasibility in both directions
 
@@ -59,12 +59,23 @@ Guides schema version control workflows. The assistant helps with:
 
 **When Claude uses it**: when you are working with panproto VCS operations and need guidance.
 
+### code-transform (Sonnet)
+
+Transforms source code through the parse, protolens, emit pipeline. The agent:
+- Parses source files into schemas via tree-sitter, for any of 261 languages
+- Computes the structural diff and classifies each change by optic kind
+- Generates a lens between the two versions and inspects its steps
+- Emits the transformed code and reports what was preserved, approximated, or lost
+
+**When Claude uses it**: when you ask to refactor across files, translate between languages, extract a data model from a codebase, or diff two versions of a source file structurally.
+
 ## Requesting a specific agent
 
 You can ask Claude to use a specific agent:
 - "Use the migration advisor to analyze these two schemas"
 - "Have the schema reviewer check my schema"
 - "Run the compatibility checker on these two formats"
+- "Use the code transform agent to port this module"
 
 ## Agent output
 

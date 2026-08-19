@@ -46,7 +46,8 @@ The byte-identical round-trips above require the `tree-sitter` feature. Independ
 ```rust
 use panproto_io::unified_codec::UnifiedCodec;
 
-let codec = UnifiedCodec::json("my_protocol");
+// Each constructor is fallible: it loads the grammar, so a build without it errors here.
+let codec = UnifiedCodec::json("my_protocol")?;
 
 // Format-preserving parse: returns both instance and CST complement
 let (instance, complement) = codec.parse_wtype_preserving(&schema, &bytes)?;
@@ -60,13 +61,21 @@ assert_eq!(bytes, output); // byte-identical if no modifications
 
 ### TypeScript (via WASM)
 
-```typescript
-import { parseInstancePreserving, emitInstancePreserving } from "@panproto/core";
+There is no format-preserving pair on the `@panproto/core` high-level surface. The two entry points live at the WASM boundary as `parse_instance_preserving` / `emit_instance_preserving`, and they are compiled in only when `panproto-wasm` is built with its `format-preserving` feature, which is not a default. The published npm build therefore does not carry them; you need your own `wasm-pack build --features format-preserving`.
 
-const { instance, complement } = await parseInstancePreserving("openapi", schema, inputBytes);
-// ... modify instance ...
-const output = await emitInstancePreserving("openapi", schema, instance, complement);
+```typescript
+// Reached through the module, not through the Panproto facade.
+const packed = wasm.exports.parse_instance_preserving(
+  ioRegistryHandle, encoder.encode('openapi'), schema._handle.id, inputBytes,
+);
+const [instanceBytes, complementBytes] = unpackFromWasm<[Uint8Array, Uint8Array]>(packed);
+// ... modify the instance ...
+const output = wasm.exports.emit_instance_preserving(
+  ioRegistryHandle, encoder.encode('openapi'), schema._handle.id, instanceBytes, complementBytes,
+);
 ```
+
+`complementBytes` is empty when the codec has no format preservation to offer, and passing an empty complement to the emitter falls back to canonical emission rather than failing.
 
 ### Via the ProtocolRegistry
 
@@ -118,7 +127,7 @@ let output = codec.emit_wtype(&schema, &instance)?;
 
 // After (0.24.0+, with tree-sitter feature)
 use panproto_io::unified_codec::UnifiedCodec;
-let codec = UnifiedCodec::json("my_protocol");
+let codec = UnifiedCodec::json("my_protocol")?;
 let (instance, complement) = codec.parse_wtype_preserving(&schema, &bytes)?;
 let output = codec.emit_wtype_preserving(&schema, &instance, &complement)?;
 ```

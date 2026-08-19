@@ -44,10 +44,11 @@ These skills walk you through a specific workflow: `getting-started`, `build-mig
 These skills provide comprehensive reference material: `expression-language`, `sdk-typescript`, `sdk-python`, `sdk-rust`, `sdk-haskell`.
 
 ### CI skills (set up automation)
-These skills generate configuration files: `ci-github-actions`, `ci-pre-commit`, `ci-breaking-gate`.
+These skills generate configuration files: `github-actions`, `pre-commit-hooks`, `breaking-change-gate`. They live in `ci-integrations/` rather than `skills/`, and the installer symlinks them alongside the rest, so they are invoked the same way: `/panproto-github-actions`, `/panproto-pre-commit-hooks`, `/panproto-breaking-change-gate`.
 
 ## Tips
 
 - Skills show examples across the SDKs (TypeScript, Python, Rust, and Haskell at full parity as of v0.55.0) plus the CLI. Focus on the one relevant to your project.
 - Every skill has a "Further Reading" section linking to the tutorial and dev-guide. Follow these links to understand the theory behind what the skill does.
 - If a skill's guidance does not match your situation, tell Claude what is different. Skills provide the starting point; Claude adapts from there.
+- panproto v0.70.0 added a Swift SDK (`bindings/swift`), which the toolkit does not yet carry a skill for. Until it does, read the Swift SDK reference in the panproto book and use `/panproto-sdk-haskell` for the shape of the C ABI surface both bindings consume.

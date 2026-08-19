@@ -80,10 +80,10 @@ There is no bracket-indexing postfix; to reach a list element use `head`, `tail`
 
 ## Edge traversal
 
-Inside an instance context, `->` follows a named edge from a node (it lowers to the `edge` builtin):
+Inside an instance context, `->` follows an edge from a node by its **kind** (it lowers to the `edge` builtin, with the identifier on the right becoming its string argument):
 
 ```haskell
-doc -> layers            -- follow the "layers" edge from doc
+doc -> layers            -- same as: edge doc "layers"
 ```
 
 ## Record operations
@@ -213,13 +213,17 @@ On a key collision, `merge` takes the right-hand record's value.
 ### Graph traversal (5)
 These require an instance context and are evaluated by the instance-aware evaluator (`panproto_inst::instance_env`). In the standard evaluator they return `Nothing`.
 
+The first argument is a **node reference**: either a numeric node id or the string `"self"`, which resolves to the node the current evaluation is anchored at. `"self"` with no context node is an error rather than a null.
+
 | Builtin | Signature | Meaning |
 |---------|-----------|---------|
-| `edge` (also `x -> name`) | `node -> string -> value` | Follow a named edge from a node |
-| `children` | `node -> [value]` | All children of a node |
-| `has_edge` / `hasEdge` | `node -> string -> bool` | Whether a node has a given outgoing edge |
-| `edge_count` / `edgeCount` | `node -> int` | Count of outgoing edges |
-| `anchor` | `node -> string` | The schema anchor (sort/kind) of a node |
+| `edge` (also `x -> name`) | `noderef -> string -> value` | The first child reached by an edge of that **kind**, or `Nothing` |
+| `children` | `noderef -> [value]` | All children of a node, whatever the edge kind |
+| `has_edge` / `hasEdge` | `noderef -> string -> bool` | Whether a node has an outgoing edge of that kind |
+| `edge_count` / `edgeCount` | `noderef -> int` | Count of outgoing arcs |
+| `anchor` | `noderef -> string` | The schema anchor (sort/kind) of a node |
+
+`edge` and `has_edge` match on the edge's **kind**, not its name. `edge` answers a record carrying the child's own fields, its anchor and its id, so the calls chain: `edge (edge "self" "record-schema") "prop"`.
 
 ## Pattern matching
 
@@ -256,8 +260,8 @@ Comprehensions desugar to `flat_map` and guards.
 
 Expressions run with safety limits to prevent runaway evaluation:
 - **Step limit**: maximum number of reduction steps (`EvalConfig::max_steps`, default 100,000)
-- **Depth limit**: maximum recursion depth
-- **List-length limit**: maximum length of a constructed list (`range` is checked before it allocates)
+- **Depth limit**: maximum recursion depth (`max_depth`, default 256)
+- **List-length limit**: maximum length of a constructed list (`max_list_len`, default 10,000; `range` is checked before it allocates)
 
 Exceeding a limit produces an error (`StepLimitExceeded`, `DepthExceeded`, or `ListLengthExceeded`), not an infinite hang.
 
@@ -267,16 +271,27 @@ Exceeding a limit produces an error (`StepLimitExceeded`, `DepthExceeded`, or `L
 # Evaluate an expression (prints the result as JSON)
 schema expr eval "2 + 3 * 4"
 
-# Parse and pretty-print
+# Parse and print the AST
 schema expr parse "\x -> x + 1"
+
+# Parse and pretty-print back in canonical form
+schema expr fmt "\x->x+1"
+
+# Parse and report syntax errors only
+schema expr check "\x -> x + 1"
 
 # Interactive REPL
 schema expr repl
 ```
 
+Each verb takes the expression source as a positional argument. None of them
+takes an instance or a schema, so the graph-traversal builtins return `Nothing`
+on this surface; see the query-instances skill for the paths that do bind an
+instance.
+
 ## Further Reading
 
-- [Tutorial Ch. 20: Value-Dependent Transforms](https://panproto.dev/tutorial/chapters/20-value-dependent-transforms.html)
-- [Tutorial Ch. 21: Querying Instances](https://panproto.dev/tutorial/chapters/21-querying-instances.html)
-</content>
-</invoke>
+- [Expression language reference](https://panproto.dev/book/reference/expression-language.html)
+- [Expression language semantics](https://panproto.dev/book/explanation/semantics/expression-language.html)
+- [Apply field transforms](https://panproto.dev/book/how-to/field-transforms.html)
+- [Query instances](https://panproto.dev/book/how-to/query-instances.html)

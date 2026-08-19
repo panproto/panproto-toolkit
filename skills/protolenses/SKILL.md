@@ -24,11 +24,11 @@ You are helping a user work with protolenses, the Level 4 abstraction in panprot
 
 **CLI:**
 ```bash
-schema lens generate old.json new.json
+schema lens generate old.json new.json --protocol atproto --chain
 # Produces a protolens chain, not just a single lens
 
 # Hint-guided generation (0.26.0+)
-schema lens generate old.json new.json --hints hints.json
+schema lens generate old.json new.json --protocol atproto --hints hints.json
 # Seeds the morphism search with vertex anchors and constraints
 ```
 
@@ -40,7 +40,8 @@ const chain = p.protolensChain(oldSchema, newSchema);
 
 **Python:**
 ```python
-lens, quality = panproto.auto_generate_lens(old_schema, new_schema, proto)
+chain = panproto.ProtolensChain.auto_generate(old_schema, new_schema, proto)
+lens = chain.instantiate(old_schema, proto)
 ```
 
 **Rust:**
@@ -50,22 +51,36 @@ let result = panproto_lens::auto_generate(&old_schema, &new_schema, &protocol, &
 let chain = result.chain;
 ```
 
+When no alignment exists at all, none of these answers. `p.span(from, to)` and `panproto.find_span(src, tgt, protocol)` do, returning the sub-schema the two share rather than refusing; see `/use-lenses` for the span surface.
+
 ### From elementary constructors
 
-Elementary protolens constructors are the atomic building blocks:
+`panproto_lens::protolens::elementary` holds the atomic steps; each returns a single `Protolens`, and each carries the precondition its name implies (the named sort or op must be present for a drop or rename, absent for an add).
 
-| Constructor | Precondition | Effect |
-|------------|-------------|--------|
-| `Identity` | Any schema | No-op |
-| `RenameVertex(old, new)` | Schema has vertex `old` | Renames vertex |
-| `RenameEdge(old, new)` | Schema has edge `old` | Renames edge |
-| `AddVertex(name, kind, default)` | Schema lacks vertex `name` | Adds vertex with default |
-| `RemoveVertex(name)` | Schema has vertex `name` | Removes vertex (stored in complement) |
-| `AddEdge(src, tgt, kind)` | Schema has both endpoints | Adds edge |
-| `RemoveEdge(src, tgt)` | Schema has edge | Removes edge |
-| `CoerceType(vertex, from, to, expr)` | Vertex has kind `from` | Changes kind, applies coercion |
-| `WrapInObject(field, wrapper)` | Schema has field | Nests field in new object |
-| `HoistField(wrapper, field)` | Schema has nested field | Lifts field out |
+| Constructor | Effect |
+|------------|--------|
+| `add_sort(name, kind, default)` / `add_sort_with_default(...)` | Add a sort, with a default for existing data |
+| `drop_sort(name)` | Drop a sort; the complement captures its data |
+| `rename_sort(old, new)` | Rename a sort |
+| `add_op(name, src, tgt, kind)` / `drop_op(name)` / `rename_op(old, new)` | Add, drop or rename an operation |
+| `add_edge(...)` / `drop_edge(...)` | Add or drop a schema edge |
+| `rename_edge_name(parent, field, old, new)` | Rename a JSON key without touching the sorts (always `Iso`) |
+| `sort_coerce(...)` / `sort_coerce_checked(...)` | Change a sort's kind through a coercion witness |
+| `add_equation(eq)` / `drop_equation(name)` / `directed_eq(deq)` / `drop_directed_eq(name)` | Edit the theory's equations |
+| `pullback(morphism)` | Pull the schema back along a theory morphism |
+| `scoped(focus, inner)` | Apply `inner` within the sub-theory reachable from `focus` |
+
+`panproto_lens::protolens::combinators` builds the ordinary field edits out of those, each returning a whole `ProtolensChain`:
+
+| Combinator | Effect |
+|------------|--------|
+| `rename_field(parent, field, old_name, new_name)` | Rename a field's JSON key |
+| `add_field(parent, field_name, field_kind, default)` | Add a sort and the edge reaching it |
+| `remove_field(field)` | Drop a sort and its incoming edges |
+| `hoist_field(parent, intermediate, child)` | Collapse `parent → intermediate → child` to `parent → child` |
+| `nest_field(parent, child, intermediate, kind, edge_kind, old_edge_name, parent_to_intermediate, intermediate_to_child)` | Insert an intermediate vertex between a parent and a child |
+| `map_items(focus, inner)` | Apply `inner` to every element of an array (a `Traversal`) |
+| `pipeline(chains)` | Concatenate chains |
 
 ## Inspecting chains
 
@@ -77,35 +92,37 @@ schema lens inspect chain.json --protocol atproto
 
 **TypeScript:**
 ```typescript
-const steps = chain.steps();
-for (const step of steps) {
-  console.log(step.type, step.description);
-}
+console.log(chain.toJson());              // the serialized chain
+console.log(chain.requirements(schema));  // defaults and data instantiation still needs
+console.log(chain.fieldTransforms());     // value-level steps, keyed by parent vertex
+console.log(chain.checkApplicability(schema));
 ```
 
 ## Optic classification
 
-Every protolens chain is classified by its information-theoretic properties:
+Every protolens chain folds to a single `OpticKind`, which is what says whether a complement is needed:
 
 ```bash
 schema lens inspect chain.json --protocol atproto
 ```
 
-| Classification | Meaning | Complement needed? |
+| `OpticKind` | Meaning | Complement needed? |
 |---------------|---------|-------------------|
-| **Isomorphism** | Bijective, no data loss | No (complement is empty) |
-| **Injection** | Source embeds in target | No for forward, yes for backward |
-| **Projection** | Target is subset of source | Yes (complement stores dropped data) |
-| **Affine** | Partial function | Yes, and may fail on some inputs |
-| **General** | None of above | Yes |
+| `Iso` | Bijective, and every value transform is lossless | No (the complement is terminal) |
+| `Lens` | Target is a projection of the source | Yes (it stores the dropped data) |
+| `Prism` | Source injects into the target as one variant | Yes (it stores the variant tag) |
+| `Affine` | A `Lens` composed with a `Prism` | Yes, and the step may not apply |
+| `Traversal` | Multi-focus, e.g. a step under an `item` edge | Yes (it tracks positions) |
 
-## Naturality-aware span exclusion (0.38.0+)
+## Only the objective decides what is dropped (0.71.0)
 
-At `Stringency::Lenient` and above, the CSP scope is now pre-filtered by a naturality consistency predicate: source vertices that cannot participate in any seed-respecting mapping are excluded before the solver runs. The previous kind-only predicate kept too many sources in scope on sparse-overlap schema pairs, causing the search to bail with no candidates. If you have cross-protocol runs that previously failed with empty candidate sets, retry them on 0.38 before reaching for additional hints. Fixes panproto/panproto#51.
+Auto-generation used to pre-filter the search scope: three local feasibility scans populated `excluded_sources` before the search ran, excluding any source vertex with no target it could map to with all of its outgoing edges preserved. Those scans are gone. They were stricter than the search itself, so a root whose only outgoing edge had no target counterpart was excluded along with the orphan leaf, and the generated chain carried a `DropSort` for a record the search would have kept. A source vertex is now dropped only where the objective prefers dropping it, and fields that used to disappear at a span tier survive.
+
+At a span tier the candidate list also now comes from the span search rather than from `find_morphisms`, which returns *total* morphisms. No total morphism exists whenever the source carries a sort the target lacks, so `auto_generate_candidates` used to report "no morphism found between schemas" on exactly the pairs a span tier exists for.
 
 ## Symbolic simplification
 
-Chains are automatically simplified to remove redundant steps. For example, `RenameVertex(a, b)` followed by `RenameVertex(b, c)` simplifies to `RenameVertex(a, c)`.
+Chains are automatically simplified to remove redundant steps. For example, `rename_sort(a, b)` followed by `rename_sort(b, c)` simplifies to `rename_sort(a, c)`, and a rename followed by its inverse cancels to the identity.
 
 ## Fleet application
 
@@ -113,18 +130,18 @@ Apply a protolens chain to many schemas at once:
 
 **CLI:**
 ```bash
-schema lens check chain.json --protocol atproto schemas/
+schema lens check chain.json schemas/ --protocol atproto
 # Reports which schemas satisfy the precondition
-# and what the result would be for each
-
-schema lens apply chain.json --protocol atproto schemas/
-# Applies the chain to all compatible schemas
+# and what the result would be for each; --dry-run reports without instantiating
 ```
+
+`schema lens apply` takes one chain and one data file, so fleet application over a directory of schemas is the `check` command plus the SDK's `applyToFleet` below.
 
 **TypeScript:**
 ```typescript
-const results = chain.applyToFleet(schemas);
-// results: Map<string, { compatible: boolean, result?: Schema }>
+const { applied, skipped } = chain.applyToFleet(schemas);
+// applied: string[] of schema names the chain instantiated against
+// skipped: [string, string[]][] pairing each skipped schema with its unmet requirements
 ```
 
 ## Lifting across protocols
@@ -164,43 +181,48 @@ Nickel provides typed contracts for validation, record merge for fragment compos
 
 ## Symmetric lenses
 
-A symmetric lens pairs two protolens chains for full bidirectional sync:
+A symmetric lens pairs two protolens chains for full bidirectional sync. `p.symmetricLens(left, right)` is the public constructor (0.62.0+); before it, a symmetric lens had to be built through the lower-level `SymmetricLensHandle.fromSchemas` static, which required passing the internal WASM module handle.
 
 **TypeScript:**
 ```typescript
-const sym = p.symmetricLens(schemaA, schemaB);
+using sym = p.symmetricLens(schemaA, schemaB);
 
-// Sync from A to B
-const { updated: updatedB, complement: newComp } = sym.syncAtoB(recordA, complementA);
+// Propagate a change on the left to the right
+const { view: rightView, complement: c1 } = sym.syncLeftToRight(leftView, leftComplement);
 
-// Sync from B to A
-const { updated: updatedA, complement: newComp2 } = sym.syncBtoA(recordB, complementB);
+// And the other way
+const { view: leftView2, complement: c2 } = sym.syncRightToLeft(rightView, rightComplement);
 ```
 
-**CLI:**
-```bash
-schema lens apply lens.json recordA.json --protocol atproto --direction forward complementA.json
-```
+Both views and both complements are MessagePack bytes. Each side's private information is preserved in the shared complement, so after syncing left to right and back you get the original left.
 
-Symmetric lenses maintain consistency: after syncing A to B and then B back to A, you get the original A (up to complement).
+**Rust:** `auto_symmetric` builds its middle schema by inducing it from one span search on the `iso` path (0.71.0). It used to assemble the overlap by hand into a fresh `Schema` whose adjacency indices were left empty while its edge map was populated, so every adjacency query on the middle schema answered with nothing, and it silently dropped entries, required sets, variants and recursion points. It also refused whenever the two schemas shared no vertex *name*; the refusal is now reachable only when the optimal apex is empty, which takes two schemas whose kinds are disjoint.
 
 ## Serialization
 
 Protolens chains can be serialized for storage, cross-project reuse, or version control:
 
 ```bash
-# Export chain to JSON
-schema lens inspect chain.json --json > exported-chain.json
+# Generate straight to a chain file
+schema lens generate old.json new.json --protocol atproto --save chain.json
 
 # Import and apply
-schema lens apply exported-chain.json record.json
+schema lens apply chain.json record.json --protocol atproto
 ```
 
 **TypeScript:**
 ```typescript
-const json = chain.toJSON();
-const restored = p.protolensChainFromJSON(json);
+const json = chain.toJson();
+const restored = ProtolensChainHandle.fromJson(json, wasm);
 ```
+
+**Python:**
+```python
+json_text = chain.to_json()
+restored = panproto.ProtolensChain.from_json(json_text)
+```
+
+Value-level steps do not appear in `toJson()`; call `chain.fieldTransforms()` (TypeScript) to list them and confirm such a step survived compilation.
 
 ## Further Reading
 

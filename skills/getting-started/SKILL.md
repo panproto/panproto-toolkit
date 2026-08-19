@@ -43,7 +43,7 @@ import { Panproto } from '@panproto/core';
 async function main() {
   const p = await Panproto.init();
 
-  // Pick a protocol (50 available: atproto, openapi, avro, protobuf, ...)
+  // Pick a protocol (54 available: atproto, openapi, avro, protobuf, ...)
   const proto = p.protocol('atproto');
 
   // Define a schema
@@ -100,10 +100,10 @@ cargo add panproto-core
 
 2. Replace `src/main.rs`:
 ```rust
-use panproto_core::*;
+use panproto_core::{protocols, schema};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let proto = panproto_protocols::atproto::protocol();
+    let proto = protocols::atproto::protocol();
     let schema = schema::SchemaBuilder::new(&proto)
         .vertex("post", "record", Some("app.bsky.feed.post"))?
         .vertex("post:body", "object", None)?
@@ -120,16 +120,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Step 3: Create panproto.toml manifest
 
-Create `panproto.toml` in the project root:
-```toml
-[project]
-name = "<project-name>"
-version = "0.1.0"
-protocol = "atproto"   # or openapi, avro, protobuf, sql, graphql, json-schema, ...
+Create `panproto.toml` in the project root. The manifest is a workspace of packages, and each package may pin the protocol its files are parsed under; without a pin, the language is detected per file:
 
-[schemas]
-path = "schemas/"       # directory for schema files
+```toml
+[workspace]
+name = "<project-name>"
+exclude = ["target", "node_modules", "__pycache__", "build", "dist", ".git"]
+
+[[package]]
+name = "schemas"
+path = "schemas"
+protocol = "atproto"   # or openapi, avro, protobuf, sql, graphql, json-schema, ...
 ```
+
+`[workspace]` is required: a manifest without it is rejected as malformed rather than falling back to a default. A manifest-backed directory is authoritative about its own protocol wherever a command also takes `--protocol`, so the two must agree.
 
 ## Step 4: Initialize schema version control
 
@@ -147,6 +151,20 @@ schema add schemas/
 schema commit -m "initial schema"
 ```
 
+`schema add` takes a single schema file or a directory. A directory goes in through the per-file project path, so each file keeps its own object and a later one-file edit reuses every unchanged sibling's object rather than realigning the whole schema. That path covers parsed source projects and manifest-declared bundle protocols, including ATProto lexicon sets with cross-file references. Python reaches the same path as `repo.add_project(project, skip_verify=False)`.
+
+Three flags are worth knowing early:
+
+```bash
+schema add schemas/ --dry-run          # show what would be staged
+schema add schemas/ --data records/    # stage JSON data files alongside the schema
+schema add schemas/ --skip-verify      # record the migration, skip the model check
+```
+
+`--skip-verify` matters when you are replaying already-validated history: staging runs a bounded model check against HEAD on every schema, and on an 800-vertex schema that costs minutes per `add`. With the flag set the migration is still derived and recorded, the stage is left pending, and a default `commit` treats pending as non-blocking. `commit --skip-verify` is the matching escape hatch for equation verification.
+
+Staged data is stored opaquely against a `schema_id`: it is not parsed or checked against the schema it is recorded under, so a file whose shape has nothing to do with the schema is accepted and committed.
+
 ## Step 6: Verify
 
 Run the starter code to confirm everything works:
@@ -160,6 +178,12 @@ Suggest the user explore:
 1. `/panproto-define-schema` to learn schema construction in depth
 2. The [panproto tutorial](https://panproto.dev/tutorial/) starting from Chapter 1
 3. `/panproto-build-migration` once they have two schema versions
+4. Loading an existing schema document instead of hand-building one. All 54 built-in protocols are loadable in-process, including json-schema, graphql, sql, and protobuf (restored as first-class semantic protocols in 0.61.0). Use `p.parseSchemaDocument('json-schema', doc)` in TypeScript or `panproto.parse_schema_document('json-schema', doc)` in Python to turn a JSON-document schema (JSON Schema, OpenAPI, Avro, ATProto lexicon, ...) into a schema usable as a lens or migration endpoint. Text/IDL protocols (SQL DDL, GraphQL SDL, Protobuf `.proto`, ...) use `p.parseSchemaSource(protocol, source)` / `panproto.parse_schema_source(protocol, source)`.
+5. Asking what two schemas share, with `schema auto-migrate old.json new.json` or `p.span(a, b)` (0.71.0+). Unlike lens generation it never refuses: two schemas with nothing in common come back with an empty apex and a coverage of zero rather than an exception, so it is the right first call on an unfamiliar pair.
+
+## A note on the CLI's protocol support
+
+The SDKs reach all 54 built-in protocols. The `schema` CLI's `--protocol` flag resolves `atproto` and nothing else, and exits non-zero naming what is supported on anything else. So a project in another protocol builds, validates, migrates and versions fine through an SDK, and the CLI steps above are the ATProto path.
 
 ## Further Reading
 

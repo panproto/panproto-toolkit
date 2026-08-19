@@ -19,6 +19,7 @@
    - Python: `pip install panproto` (requires Python 3.13+)
    - Rust: add `panproto-core` to your `Cargo.toml`
    - Haskell: cabal package `panproto` (full parity as of v0.55.0); build `libpanproto_c` from source via `bindings/haskell/bootstrap/dev-link.sh`, then `cabal build`. See `/panproto-sdk-haskell`.
+   - Swift: SwiftPM package at `bindings/swift/` (added in v0.70.0; requires Swift 6.0, which on Apple platforms means Xcode 16). It is not on a registry yet. Stage the C library with `bootstrap/dev-link.sh` to build from source, or `bootstrap/fetch-bindist.sh` for a prebuilt one, then `swift build`. The toolkit has no Swift skill yet; read the Swift SDK reference in the panproto book.
 
 ## Automated install
 
@@ -26,12 +27,15 @@
 curl -sSf https://raw.githubusercontent.com/panproto/panproto-toolkit/main/install.sh | bash
 ```
 
-This does three things:
+This does four things:
 1. Clones the repo to `~/.local/share/panproto-toolkit/`
-2. Symlinks all skills into `~/.claude/skills/` (prefixed with `panproto-`)
-3. Symlinks all agents into `~/.claude/agents/` (prefixed with `panproto-`)
+2. Symlinks every directory under `skills/` into `~/.claude/skills/` (prefixed with `panproto-`)
+3. Symlinks every directory under `ci-integrations/` into the same place, so `github-actions`, `pre-commit-hooks`, and `breaking-change-gate` are invoked as `/panproto-github-actions` and so on
+4. Symlinks all agents into `~/.claude/agents/` (prefixed with `panproto-`)
 
-Since the install uses symlinks, running `git pull` in the cloned repo updates all skills in place.
+It then builds and registers the MCP server unless `--no-mcp` is passed. Since the install uses symlinks, running `git pull` in the cloned repo updates all skills in place.
+
+Two flags are worth knowing: `--local <dir>` installs from a checkout you already have instead of cloning, and `--project <dir>` installs into that project's `.claude/` directory in addition to the global one. The global install always runs.
 
 ## Manual install
 

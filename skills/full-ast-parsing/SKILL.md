@@ -26,31 +26,29 @@ You are helping a user parse source code into panproto's universal representatio
 ### CLI
 
 ```bash
-# Parse a TypeScript file into a panproto schema
+# Parse a source file into a panproto schema. The language is detected
+# from the extension; the command takes a path and nothing else.
 schema parse file src/index.ts
-
-# Parse with explicit language (auto-detected by extension)
-schema parse file --language typescript src/index.ts
-
-# Output as JSON
-schema parse file src/index.ts --format json > parsed.json
 ```
 
 ### TypeScript
 
-```typescript
-const schema = p.parseFile('src/index.ts');
-// schema is a panproto Schema with:
-//   - vertices for every AST node (types, functions, variables, etc.)
-//   - edges for parent-child and field relationships
-//   - constraints from node metadata
-```
+The WASM build carries no tree-sitter grammars, so `@panproto/core` has no AST parsing surface. Reach for the CLI, the Python wheel, or the Rust crate for this. What the SDK does carry is everything downstream of a parsed schema (diff, lens, migration, query), so a schema parsed elsewhere and serialized with `Schema::to_json` loads into the SDK with `p.parseSchemaDocument` or a `BuiltSchema` handle.
 
 ### Python
 
 ```python
 registry = panproto.AstParserRegistry()
-schema = registry.parse_source_file("src/main.py")
+
+# parse_file takes the path and the bytes; the path is what selects the grammar.
+with open("src/main.py", "rb") as f:
+    schema = registry.parse_file("src/main.py", f.read())
+
+# Or name the language yourself, which is what you want for a buffer with no path.
+schema = registry.parse_with_protocol("python", b"def f(x): return x", "main.py")
+
+# Module-level convenience over the default registry.
+schema = panproto.parse_source_file("src/main.py", content_bytes)
 ```
 
 ### Rust
@@ -69,38 +67,31 @@ Parse an entire directory into a unified project schema:
 ### CLI
 
 ```bash
-# Parse a project directory
+# Parse a project directory. The path defaults to "."; there are no
+# include/exclude flags, so scope the run by pointing it at a subtree.
 schema parse project ./src
-
-# With specific file patterns
-schema parse project ./src --include "*.ts" --include "*.tsx"
-
-# Exclude patterns
-schema parse project ./src --exclude "node_modules" --exclude "*.test.ts"
-```
-
-### TypeScript
-
-```typescript
-const project = p.parseProject('./src', {
-  include: ['**/*.ts', '**/*.tsx'],
-  exclude: ['**/node_modules/**', '**/*.test.ts'],
-});
-// project.schema: unified Schema with path-prefixed vertex IDs
-// project.files: per-file schemas
 ```
 
 ### Python
 
 ```python
 project = panproto.parse_project("./src")
-print(project.schema)      # unified project schema
-print(project.file_count)  # number of parsed files
+project.schema         # unified project schema
+project.file_paths()   # every path that was parsed; len() of it is the file count
+project.protocol_map() # path -> the grammar each file was parsed under
+
+# Or assemble the set yourself, which is how you control what goes in.
+builder = panproto.ProjectBuilder()
+builder.add_file("src/main.py", content_bytes)
+builder.add_directory("src/lib")
+project = panproto.build_project(builder)
 ```
 
 The project schema is a categorical coproduct of per-file schemas, with:
 - Path-prefixed vertex IDs (e.g., `src/index.ts::FunctionDeclaration_0`)
-- Cross-file import edges from the `ThImport` theory
+- Cross-file edges of kind `imports`, synthesized by `panproto-project`'s import resolver after the coproduct is taken. An import whose path does not normalize to a file in the project, or whose target file exports nothing, is skipped silently, so the absence of an edge is not evidence the import is absent.
+
+As of 0.70.1 a project whose files agree on a protocol is assembled *under that protocol* rather than under an internal coproduct protocol named `project`. That matters because equation diagnostics are selected by protocol name: a project whose every file was ATProto previously reported `no protocol theory registered for 'project'` and was marked valid without its theory ever being consulted. A genuinely mixed project still has no single theory to check against and now says so, naming the protocols it mixes.
 
 ## Round-trip emission
 
@@ -109,13 +100,11 @@ Parse and emit back to source code, preserving exact formatting:
 ### CLI
 
 ```bash
-# Round-trip test (parse then emit)
+# Round-trip test (parse then emit): output should match the original exactly
 schema parse emit src/index.ts
-# Output should match the original file exactly
-
-# Emit in a different language (via protolens)
-schema parse emit src/index.ts --target-language python
 ```
+
+There is no `--target-language` flag. Cross-language emission goes through a protolens chain, which the CLI reaches under `schema lens` rather than under `schema parse`.
 
 Exact round-trip works because interstitial text (keywords, operators, whitespace, comments) is captured as constraints on the schema vertices. The emitter reconstructs the source from these constraints plus the AST structure.
 
@@ -127,7 +116,7 @@ This is what makes by-construction schemas (e.g. the output of a migration) rend
 
 ### Emit verification status (0.51.0+)
 
-`emit_pretty` was rewritten in 0.51.0 to drive spacing and indentation from grammar-derived token *roles* (BracketOpen, BracketClose, Separator, Keyword, Operator, Terminal, Immediate) consulted through a pure role-pair adjacency relation, rather than from token-text inspection. As of 0.52.0, source-code emit is verified against a strict oracle — `emit(parse(emit(s))) == emit(s)` plus preservation of the schema's vertex-kind and edge-shape multisets (rejecting degenerate fixed points that drop content to `""`) — over the entire upstream `test/corpus/` of **255 of 261** vendored grammars, up from 16.
+`emit_pretty` was rewritten in 0.51.0 to drive spacing and indentation from grammar-derived token *roles* (BracketOpen, BracketClose, Separator, Keyword, Operator, Terminal, Immediate) consulted through a pure role-pair adjacency relation, rather than from token-text inspection. As of 0.52.0, source-code emit is verified against a strict oracle (`emit(parse(emit(s))) == emit(s)`, plus preservation of the schema's vertex-kind and edge-shape multisets, which rejects degenerate fixed points that drop content to `""`) over the entire upstream `test/corpus/` of **255 of 261** vendored grammars, up from 16.
 
 `ParserRegistry::emit_verification_status(protocol)` reports the tier per language so downstream tooling can refuse emit on unverified grammars:
 
@@ -135,9 +124,9 @@ This is what makes by-construction schemas (e.g. the output of a migration) rend
 |------|---------|
 | `Verified` | A fixed-point / round-trip test exercises emit on representative source. |
 | `Generic` | The grammar is registered and the generic dispatch applies, but no test asserts emit correctness. |
-| `Unsupported` | No `grammar.json` was vendored. |
+| `Unsupported` | The protocol is not registered, or is registered with no vendored `grammar.json`. `emit_pretty` returns `ParseError::EmitFailed`. |
 
-The six unverified grammars are irreducible without upstream changes (the comment/todotxt/wolfram free-text grammars, less, move, and test). By-construction emit (no parse-history bytes) holds to an AST round-trip bar — the emitted source re-parses to the same kind/edge multiset — rather than byte parity.
+The six unverified grammars are irreducible without upstream changes (the comment/todotxt/wolfram free-text grammars, less, move, and test). By-construction emit (no parse-history bytes) holds to an AST round-trip bar (the emitted source re-parses to the same kind/edge multiset) rather than to byte parity.
 
 ### `ParseEmitLens` (0.40.0+)
 
@@ -179,15 +168,22 @@ let decorated = reg.decorate("typescript", &abstract_schema, &policy)?;
 Register external grammars at runtime without rebuilding panproto:
 
 ```rust
+// language: tree_sitter::Language, node_types_json: Vec<u8>,
+// tags_query: Option<String>, grammar_json: Option<Vec<u8>>.
 registry.override_grammar(
-    "my-lang".into(), vec!["myext".into()],
-    language_ptr, node_types_json, None, None,
+    "my-lang".to_owned(), vec!["myext".to_owned()],
+    language, node_types_json, None, None,
 )?;
+
+// The same registration without the preceding unregister.
 registry.register_external_grammar_owned(
-    name, extensions, language, node_types, tags_query, grammar_json,
+    name, extensions, language, node_types_json, tags_query, grammar_json,
 )?;
-registry.unregister("my-lang");
+
+registry.unregister("my-lang");   // -> bool: whether a parser was removed
 ```
+
+The owned variants leak their inputs to satisfy the trait's `'static` requirement, one leak per override, which is why they are documented as a grammar-author workflow. A production build bakes the grammar in at compile time with `register_external_grammar`, whose arguments are `&'static`.
 
 Python: `AstParserRegistry.override_grammar(name, extensions, language_ptr, node_types, tags_query=None, grammar_json=None)`
 
@@ -252,22 +248,39 @@ Parse your codebase to extract the de facto schema from type definitions, databa
 Parse in one language, apply protolens transformations, emit in another. The protolens guarantees syntactic validity by construction.
 
 ### Codebase analysis
-Parse a project and use panproto's query system to analyze the structure:
+Parse a project, then query the instance over its schema. `executeQuery` takes the query first, then the instance, then the WASM module:
+
 ```typescript
-const project = p.parseProject('./src');
-const functions = executeQuery(project.instance, project.schema, {
-  filter: '\\node -> node.kind == "FunctionDeclaration"',
-  project: ['name', 'parameters', 'return_type'],
-});
+const matches = executeQuery(
+  {
+    anchor: 'FunctionDeclaration',
+    projection: ['name', 'parameters', 'return_type'],
+    limit: 50,
+  },
+  instance,
+  p._wasm,
+);
 ```
 
 ### Migration detection
-Diff two versions of parsed code to detect structural changes:
-```bash
-schema parse file old/index.ts > old-ast.json
-schema parse file new/index.ts > new-ast.json
-schema diff --src old-ast.json --tgt new-ast.json
+Diff two versions of parsed code to detect structural changes. `schema parse file` prints a summary line rather than the schema, so serialize the two schemas yourself and hand the files to `schema diff`, whose operands are positional:
+
+```python
+import panproto
+
+reg = panproto.AstParserRegistry()
+for label, path in (("old", "old/index.ts"), ("new", "new/index.ts")):
+    with open(path, "rb") as f:
+        schema = reg.parse_file(path, f.read())
+    with open(f"{label}-ast.json", "w") as out:
+        out.write(schema.to_json())
 ```
+
+```bash
+schema diff old-ast.json new-ast.json --detect-renames
+```
+
+`schema auto-migrate` answers the adjacent question, how much of the old tree has an image in the new one, and as of 0.71.0 never refuses for want of a total morphism. It is not reachable on an AST schema from the CLI, though: it resolves the source schema's protocol, a parsed AST schema names its language there, and the CLI resolves `atproto` alone. In-process, `panproto.find_span(old, new, protocol)` takes whatever `Protocol` you hand it.
 
 ## Further Reading
 

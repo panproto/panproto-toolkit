@@ -70,7 +70,13 @@ Every tool invocation is recorded in a session-scoped, append-only audit log wit
 
 ## Tools (72)
 
-Tool descriptions are accurate against panproto v0.60.0. The `schema` CLI flag surface the server wraps is unchanged across v0.56.0–v0.60.0 (those releases added SDK APIs, expression-language builtins, and engine-behavior improvements — data-only commits, list/record field transforms, tighter optic-kind classification — that flow through existing flags rather than new ones), so the tool set is unchanged. All tools are registered via `registerTool` with deterministic alphabetical ordering for LLM prompt cache consistency.
+Tool descriptions are accurate against panproto v0.71.0. Three commands the server wraps changed shape across v0.62.0–v0.71.0, and the tools over them changed with them:
+
+- `schema auto-migrate` now runs a span search rather than a total-morphism search, and never refuses for want of a match. Three flags form a strictness ladder over that one search: `--total`, the default, and `--span`. `--json` writes the span's right leg, a migration out of the apex whose declared domain is the apex digest, not the source schema.
+- `schema integrate` resolves the left schema's protocol on every path, not only under `--auto-overlap`, and exits non-zero on one it does not carry.
+- `schema compat` and `schema diff` accept a manifest-backed project directory or a source tree as either operand, so two versions of a lexicon project can be compared without flattening them first. `panproto_classify` now runs `compat`, which is the command that classifies; it previously ran `check`, which reports migration existence conditions instead.
+
+`schema add` also gained `--skip-verify`, and its `--data` staging was repaired, so the tool over it forwards both. All tools are registered via `registerTool` with deterministic alphabetical ordering for LLM prompt cache consistency.
 
 ### Schema (6)
 
@@ -100,23 +106,23 @@ Tool descriptions are accurate against panproto v0.60.0. The `schema` CLI flag s
 |------|-------------|
 | `panproto_check_existence` | Check migration existence conditions between two schemas |
 | `panproto_lift` | Apply migration to a data record (restrict/sigma/pi directions) |
-| `panproto_auto_migrate` | Discover a migration via the 14-strategy alignment ladder |
+| `panproto_auto_migrate` | Discover a span between two schemas, over the 14-strategy alignment ladder (`total`, default, `span` strictness rungs) |
 | `panproto_integrate` | Compute pushout (integration) of two schemas with universal-property verification |
 
 ### Diff (2)
 
 | Tool | Description |
 |------|-------------|
-| `panproto_diff` | Structural diff with rename detection and optic-kind classification |
-| `panproto_classify` | Classify schema change as compatible, backward-compatible, or breaking |
+| `panproto_diff` | Structural diff with rename detection and optic-kind classification (accepts project directories and source trees) |
+| `panproto_classify` | Classify a schema change against a protocol as fully compatible, backward compatible, or breaking |
 
 ### Lens (7)
 
 | Tool | Description |
 |------|-------------|
-| `panproto_lens_generate` | Auto-generate a protolens chain with stringency tiers, ranked candidates, and explanations |
+| `panproto_lens_generate` | Auto-generate a protolens chain with stringency tiers, ranked candidates (read off the span search), and explanations |
 | `panproto_lens_apply` | Apply a protolens chain (forward or backward with complement) |
-| `panproto_lens_verify` | Verify GetPut, PutGet, and PutPut round-trip laws on test data |
+| `panproto_lens_verify` | Verify the GetPut and PutGet round-trip laws on test data (PutGet modulo derived coordinates) |
 | `panproto_lens_compose` | Compose two protolens chains via vertical composition |
 | `panproto_lens_inspect` | Inspect chain steps, preconditions, effects, and optic kind |
 | `panproto_lens_check` | Check whether a chain is applicable against a set of schemas |
@@ -135,7 +141,7 @@ Tool descriptions are accurate against panproto v0.60.0. The `schema` CLI flag s
 
 | Tool | Description |
 |------|-------------|
-| `panproto_parse_file` | Parse a source file into a schema (259 languages via tree-sitter) |
+| `panproto_parse_file` | Parse a source file into a schema (261 languages via tree-sitter) |
 | `panproto_parse_project` | Parse all files in a directory into a unified project schema |
 | `panproto_parse_emit` | Round-trip parse and emit (verified via the parse/decorate/emit lens) |
 
@@ -143,7 +149,7 @@ Tool descriptions are accurate against panproto v0.60.0. The `schema` CLI flag s
 
 | Tool | Description |
 |------|-------------|
-| `panproto_eval_expr` | Evaluate a panproto expression (59 builtins: arithmetic, string, list, record, graph traversal) |
+| `panproto_eval_expr` | Evaluate a panproto expression (60 builtins: arithmetic, rounding, string, list, record, graph traversal) |
 | `panproto_parse_expr` | Parse an expression and print its AST |
 | `panproto_fmt_expr` | Pretty-print an expression in canonical form |
 | `panproto_check_expr` | Check expression syntax without evaluation |
@@ -170,7 +176,7 @@ Tool descriptions are accurate against panproto v0.60.0. The `schema` CLI flag s
 | Tool | Risk | Description |
 |------|------|-------------|
 | `panproto_vcs_init` | additive | Initialize a panproto repository |
-| `panproto_vcs_add` | additive | Stage a schema (with optional `--data`, `--dry-run`) |
+| `panproto_vcs_add` | additive | Stage a schema, source file, or project directory (with optional `--data`, `--dry-run`, `--skip-verify`) |
 | `panproto_vcs_commit` | additive | Create a commit from staged schemas |
 | `panproto_vcs_branch_create` | additive | Create a branch |
 | `panproto_vcs_tag_create` | additive | Create a tag (plain or annotated) |
@@ -213,9 +219,9 @@ Tool descriptions are accurate against panproto v0.60.0. The `schema` CLI flag s
 
 | URI | Content |
 |-----|---------|
-| `panproto://protocols` | 50 protocol definitions + 19 annotation protocols |
+| `panproto://protocols` | 54 built-in semantic protocol definitions (incl. 19 annotation protocols) |
 | `panproto://codecs` | 50+ I/O codecs organized by pathway (JSON/SIMD, XML/quick-xml, tabular/memchr, binary, graph, relational, config, domain) |
-| `panproto://grammars` | 259 language parsers via tree-sitter across 11 grammar groups |
+| `panproto://grammars` | 261 language parsers via tree-sitter across 11 grammar groups |
 
 ## Prompts (6)
 

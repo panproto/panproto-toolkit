@@ -9,7 +9,7 @@ export function exprTools(): ToolDefinition[] {
       name: "panproto_eval_expr",
       config: {
         title: TOOL_CATALOG.panproto_eval_expr.title,
-        description: "Evaluate a panproto expression (pure functional lambda calculus with 59 builtins covering arithmetic, string, list, record, comparison, boolean, type coercion, type inspection, and graph traversal operations)",
+        description: "Evaluate a panproto expression (pure functional lambda calculus with 60 builtins covering arithmetic, rounding, string, list, record, comparison, boolean, type coercion, type inspection, utility, and graph traversal operations)",
         inputSchema: z.object({
           expr: z.string().describe('Expression to evaluate (e.g., "2 + 3 * 4" or "\\\\x -> x + 1")'),
         }),

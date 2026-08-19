@@ -8,22 +8,24 @@ export function registerPrompts(server: McpServer): void {
     {
       src_path: z.string().describe("Path to source schema"),
       tgt_path: z.string().describe("Path to target schema"),
+      protocol: z.string().describe("Protocol name both schemas are written in"),
     },
-    async ({ src_path, tgt_path }) => ({
+    async ({ src_path, tgt_path, protocol }) => ({
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `I need to migrate from schema "${src_path}" to schema "${tgt_path}".
+            text: `I need to migrate from schema "${src_path}" to schema "${tgt_path}" (protocol: ${protocol}).
 
 Please:
-1. Run \`schema diff --src "${src_path}" --tgt "${tgt_path}"\` to see what changed
-2. Run \`schema check --src "${src_path}" --tgt "${tgt_path}"\` to classify compatibility
-3. Attempt auto-generation with \`schema lens generate "${src_path}" "${tgt_path}"\`
-4. If auto-generation fails, recommend a manual combinator sequence
-5. Provide a step-by-step migration plan with CLI commands
-6. Suggest how to verify the migration with lens law checks`,
+1. Run \`schema diff "${src_path}" "${tgt_path}"\` to see what changed
+2. Run \`schema compat "${src_path}" "${tgt_path}" --protocol ${protocol}\` to classify compatibility (exit 0 clean, 1 breaking, 2 usage error)
+3. Run \`schema auto-migrate "${src_path}" "${tgt_path}"\` to see how much of the source the optimal span covers, and how well the search proved its answer
+4. Attempt auto-generation with \`schema lens generate "${src_path}" "${tgt_path}" --protocol ${protocol}\`
+5. If the span leaves vertices uncovered, recommend a manual combinator sequence for the remainder
+6. Provide a step-by-step migration plan with CLI commands
+7. Suggest how to verify the migration with lens law checks`,
           },
         },
       ],
@@ -78,8 +80,8 @@ These may be different versions of the same schema, or schemas in different prot
 
 Please:
 1. Identify the protocol of each schema
-2. Run \`schema diff --src "${schema_a_path}" --tgt "${schema_b_path}"\`
-3. Classify the change (compatible, backward-compatible, breaking)
+2. Run \`schema diff "${schema_a_path}" "${schema_b_path}"\`
+3. Classify the change with \`schema compat "${schema_a_path}" "${schema_b_path}" --protocol <name>\` (fully compatible, backward compatible, breaking)
 4. If cross-protocol, analyze what is preserved, approximated, and lost
 5. Test bidirectional migration feasibility
 6. Produce a compatibility matrix`,
@@ -141,8 +143,8 @@ Source data is at "${source_data}".
 Please:
 1. Parse the source data: \`schema parse file "${source_data}"\` (or use the protocol codec)
 2. Identify the structural overlap between ${source_protocol} and ${target_protocol} theories
-3. Auto-discover a migration: \`schema auto-migrate\` between the schemas
-4. Analyze what is preserved, approximated, and lost in the translation
+3. Auto-discover a migration: \`schema auto-migrate <old> <new>\` between the schemas. Cross-protocol pairs rarely admit a total morphism, so read the apex coverage rather than expecting one; pass --span if an empty apex should count as the answer
+4. Analyze what is preserved, approximated, and lost in the translation, reading the uncovered source vertices as the loss
 5. Generate a protolens chain for the conversion
 6. Apply the conversion: \`schema data convert\`
 7. Verify the result with lens law checks`,
@@ -171,9 +173,9 @@ Please:
 1. Parse both files into panproto schemas:
    \`schema parse file "${old_file}"\`
    \`schema parse file "${new_file}"\`
-2. Diff the schemas: \`schema diff\` between the two parsed schemas
-3. Classify the change: is it compatible, backward-compatible, or breaking?
-4. Auto-generate a lens: \`schema lens generate\` between the schemas
+2. Diff the schemas: \`schema diff "${old_file}" "${new_file}"\`, which parses each source tree in place
+3. Classify the change with \`schema compat\`: is it fully compatible, backward compatible, or breaking?
+4. Auto-generate a lens: \`schema lens generate <old> <new> --protocol <name>\` between the schemas
 5. Inspect the lens chain: what optic kinds (Iso, Lens, Prism, Traversal) are involved?
 6. If possible, verify round-trip fidelity via parse → emit
 

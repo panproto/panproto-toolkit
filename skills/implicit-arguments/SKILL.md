@@ -50,5 +50,5 @@ If unification leaves an implicit variable undetermined, the elaborator reports 
 
 ## Further reading
 
-- `book/src/foundations/gats.md`: extended with a section on implicit argument elaboration.
-- `book/src/core/dependent-sorts.md`: motivating examples for dependent indices.
+- `book/src/explanation/semantics/theory-dsl.md`: `ParamSpec` and the rest of the document surface these declarations live in.
+- `panproto_gat::typecheck` on [docs.rs](https://docs.rs/panproto-gat/latest/panproto_gat/typecheck/index.html): the elaborator that recovers an implicit argument, and the errors it reports when it cannot.

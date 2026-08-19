@@ -202,4 +202,6 @@ fi
 echo ""
 echo "Prerequisites:"
 echo "  - panproto CLI: brew install panproto/tap/panproto-cli"
+echo "  - Or: curl --proto '=https' -LsSf https://github.com/panproto/panproto/releases/latest/download/panproto-cli-installer.sh | sh"
 echo "  - Or: cargo install panproto-cli"
+echo "    (all three install the 'schema' binary)"

@@ -21,6 +21,12 @@ You are helping a user manage schema versions with panproto's built-in VCS. It w
 
 Resolving the full schema for a commit means walking from the root `SchemaTreeObject` down to every `FileSchemaObject` and re-stitching the cross-file edges. The library exposes this as `panproto_vcs::resolve_commit_schema(&store, commit_id)`; the lexicon-level walker is `dev.panproto.node.getSchemaTree`. For per-file inspection without rebuilding the project schema, use `dev.panproto.node.getFileSchema`.
 
+### A project keeps the protocol its files agree on (0.70.1+)
+
+A multi-document project used to be assembled under an internal coproduct protocol named `project`, which carries no edge rules, object kinds or constraint sorts. Equation diagnostics are selected by protocol name, so a project whose every file was ATProto reported `no protocol theory registered for 'project'; schema equations were not checked` and was still marked valid: the protocol's theory was never consulted.
+
+An assembled project now takes the protocol its files agree on, so a homogeneous project is checked against that protocol's theory and a violation blocks the commit instead of passing unexamined. The three cases are `Empty`, `Homogeneous(name)` and `Heterogeneous(names)`; a project that genuinely mixes protocols still has no single theory to check against and now says so, naming the protocols it mixes rather than the internal coproduct. `schema show` reports the project's own protocol as well.
+
 ## Getting started
 
 ### Initialize a repository
@@ -35,6 +41,30 @@ schema add schemas/post.json
 schema add schemas/profile.json
 schema commit -m "initial schema definitions"
 ```
+
+`schema add` accepts a directory as well as a file. A parsed source project or a manifest-declared bundle protocol (an ATProto lexicon set with cross-file references, for instance) is staged through the per-file tree path (0.65.0+), so the tree root `ProjectBuilder` produced is retained in the index and the commit. A one-file edit therefore reuses every unchanged file object instead of realigning the whole schema; a changed file gets a new object id while its unchanged sibling keeps the old one. The SDK path is `Repository.add_project(project, skip_verify=False)`.
+
+**Staging a long history (0.63.0+).** `add` runs GAT migration validation, a bounded model check, against HEAD on every staged schema. On an ~800-vertex schema that is minutes per `add`, which makes replaying a project's released versions in sequence impractical. `--skip-verify` still derives and records the migration but skips the validation and leaves the stage `Pending`, which a default `commit` treats as non-blocking:
+
+```bash
+schema add schemas/post.json --skip-verify
+```
+```python
+repo.add(schema, skip_verify=True)          # or repo.add_project(project, skip_verify=True)
+repo.commit("replay v1.2.0", "release-bot", skip_verify=True)
+```
+
+Use it only where each version was already validated at its own release.
+
+### Stage data alongside a schema
+
+```bash
+schema add schemas/post.json --data records/
+```
+
+Every JSON file in the directory is staged, keyed by its source path, and the printed count reports what actually reached the index. Before 0.70.1 the command counted the files and printed `Staged N data file(s)` without handing any of them to the repository, so the following `commit` carried no data at all and the count was the only evidence anything had happened. Staging is all or nothing across the directory: if any file fails, the index is restored and the error names the file.
+
+Staged data is stored opaquely and is **not** parsed or validated against the schema it is recorded under. A file that is not JSON at all, or one whose shape has nothing to do with the schema, is accepted and committed, and `record_count` reports 1 for anything that does not parse as a JSON array. Validate before staging if that matters to you.
 
 ### Check status
 ```bash
@@ -70,6 +100,14 @@ Merges compute the categorical pushout of the two schema versions relative to th
 - Structural conflicts are detected precisely (e.g., two branches rename the same field differently)
 - The result is the "smallest" schema containing both sets of changes
 
+Two-way integration is a different operation, and its signature moved in 0.71.0. `merge::integrate_schemas(left, right, protocol)` takes a protocol as its third parameter, because the overlap it discovers is an induced sub-schema and a schema is well formed only against a protocol; a failed overlap discovery now surfaces as `VcsError::NotImplemented` naming the reason rather than silently producing a square built on an empty overlap. `schema integrate` resolves the left schema's protocol on **both** paths, not only under `--auto-overlap`, and exits non-zero naming the protocol when it does not carry it.
+
+The overlap itself is now the maximum common induced sub-schema, from a single span search on the `iso` path. It used to run the total-morphism search once per direction and keep whichever embedded more, so a pair where neither schema embeds wholly in the other came back as an empty overlap and the pushout merged the two as though they shared nothing. On the measured corpus that was the ordinary case.
+
+An empty overlap means no common *induced* sub-schema, which is a narrower statement than it sounds: inducing carries every arc between the chosen vertices, so a single self-loop on the target side makes an otherwise shared vertex unshareable. It is not evidence that two schemas share nothing vertex by vertex.
+
+A merged or normalized schema's adjacency order is now a function of its inputs (0.71.0). `schema_pushout` and `normalize` both rebuilt the three adjacency indices by iterating a `HashMap`, so `outgoing_edges`, `incoming_edges` and `edges_between` came back in a different order in every process. Anything reconstructing source text from a merged schema, or digesting one, now gets the same answer twice.
+
 ### Handle structural conflicts
 If the merge detects incompatible changes:
 ```bash
@@ -101,8 +139,19 @@ schema diff --staged
 schema diff abc123 def456
 
 # Theory-level diff (sorts and operations)
-schema diff --theory old.json new.json
+schema diff old.json new.json --theory
+
+# Detect likely renames, and read the derived chain
+schema diff old.json new.json --detect-renames --lens --save chain.json
 ```
+
+### How the derived migration is built (0.71.0)
+
+`derive_migration` reads a **span** rather than insisting on a total morphism. It used to fall back to `find_best_morphism` when the diff showed both removals and additions, so rename detection only helped when the pair happened to admit a total morphism, which a change that also dropped a field never does. It now takes the right leg of the optimal span, which covers as much of the old schema as it can. Detected renames pin the search rather than steering it, since they are correspondences the crate computed rather than guessed, and a pin now requires the two kinds to agree: a 0.4-confidence detection used to be able to rename an integer field onto a string one, which left the vertex with `⊥` as its only value and dropped it silently even where a kind-compatible target was available.
+
+The span-derived migration is adopted only when it maps more vertices than the diff-derived one and the spliced result type-checks as a theory morphism. The apex is validated against a protocol naming exactly the kinds the old schema uses, which makes the validation a statement about the induction rather than about how well a guessed protocol describes the schema in hand.
+
+An auto-derived migration never contracts, on vertices or on edges. The rename-recovery pass asks for an injective span: ranked by coverage alone, an ordinary edit that renamed one field and dropped its siblings derived a migration mapping every dropped field onto the survivor, and under `Sigma` the lift succeeded and reproduced each dropped field's data under the survivor's name. `SearchOptions::monic` promises injectivity on vertices and nothing more, so the derived edge map is separately pruned to be injective, keeping the name-matched image and leaving the loser unmapped. A contraction needs an explicit migration file, not a guess; renames are still recovered and drops stay drops.
 
 ### Blame
 ```bash

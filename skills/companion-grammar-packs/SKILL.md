@@ -14,7 +14,7 @@ You are helping a user reach tree-sitter grammars that don't ship in the core `p
 
 ## Why packs
 
-The published `panproto` wheel bundles only the eleven `group-core` grammars (Python, JavaScript, TypeScript, Java, C#, C++, PHP, Bash, C, Go, Rust). `panproto-grammars` itself can compile ~250 grammars, but a wheel with all of them runs roughly 300 MB unstripped — past PyPI's per-file ceiling.
+The published `panproto` wheel bundles only the eleven `group-core` grammars (Python, JavaScript, TypeScript, Java, C#, C++, PHP, Bash, C, Go, Rust). `panproto-grammars` itself vendors 261 grammars, but a wheel with all of them runs roughly 300 MB unstripped, past PyPI's per-file ceiling.
 
 The companion-pack architecture (0.45.0) splits the surface: the core wheel stays small, and each `panproto-grammars` group ships as its own pip-installable wheel. Installing a pack adds its grammars to `panproto.AstParserRegistry()` automatically, with no further configuration.
 
@@ -41,9 +41,9 @@ The companion-pack architecture (0.45.0) splits the surface: the core wheel stay
 pip install panproto-grammars-functional
 ```
 
-Pulls `panproto>=0.45,<0.46` as a runtime dep automatically. Python 3.13+. Wheels are published for Linux x86_64 / aarch64, macOS arm64 / x86_64, and Windows x86_64.
+Pulls the matching `panproto` minor as a runtime dep automatically (`panproto>=0.71,<0.72` at this release). Python 3.13+.
 
-`panproto-grammars-all` × `aarch64-unknown-linux-gnu` is currently missing — see [issue #85](https://github.com/panproto/panproto/issues/85). aarch64-linux users can install the per-group packs explicitly or pick what they need:
+The wheel matrix is the full cross-product of the ten packs and five targets: Linux x86_64 / aarch64, macOS arm64 / x86_64, and Windows x86_64. That includes the umbrella `panproto-grammars-all` on aarch64 Linux, which an earlier matrix bug had left out. Installing the per-group packs individually is still the smaller download when you know which languages you need:
 
 ```bash
 pip install panproto-grammars-{functional,web,systems,jvm,scripting,data,devops,mobile,music}
@@ -87,8 +87,8 @@ The pack version tracks the workspace `panproto` version on every release. Consu
 ```toml
 [project]
 dependencies = [
-    "panproto>=0.45,<0.46",
-    "panproto-grammars-functional>=0.45,<0.46",
+    "panproto>=0.71,<0.72",
+    "panproto-grammars-functional>=0.71,<0.72",
 ]
 ```
 
@@ -96,6 +96,6 @@ dependencies = [
 
 ## See also
 
-- `sdk-python` skill — `AstParserRegistry`, `parse_with_protocol`, `parse_project`.
-- `full-ast-parsing` skill — what AST parsing produces and how to consume it.
-- panproto-grammars README in the panproto repo — the underlying group / language flag table.
+- `sdk-python` skill: `AstParserRegistry`, `parse_with_protocol`, `parse_project`.
+- `full-ast-parsing` skill: what AST parsing produces and how to consume it.
+- panproto-grammars README in the panproto repo: the underlying group / language flag table.

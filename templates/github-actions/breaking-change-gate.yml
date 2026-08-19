@@ -1,6 +1,18 @@
 # Block PRs with breaking schema changes unless explicitly acknowledged.
 # Copy this file to .github/workflows/breaking-change-gate.yml in your project.
 # Add a "breaking-change-acknowledged" label to your repo for overrides.
+#
+# The gate reads `schema compat`'s exit code rather than grepping its text:
+#   0  no breaking changes
+#   1  at least one breaking change
+#   2  a usage or load error (unreadable operand, unknown protocol, or a
+#      --protocol that disagrees with the project's manifest)
+#
+# Each operand may be panproto's serialized schema JSON, a single schema
+# document, a manifest-backed project directory, a directory with no
+# manifest in the protocol named by --protocol, or a source tree. A
+# manifest is authoritative about its own protocol, so a --protocol that
+# disagrees with it is exit 2 rather than a silent override.
 
 name: Breaking Change Gate
 on:
@@ -10,6 +22,9 @@ on:
 permissions:
   pull-requests: write
   contents: read
+
+env:
+  PROTOCOL: atproto
 
 jobs:
   gate:
@@ -35,15 +50,26 @@ jobs:
 
           for file in $(git diff --name-only origin/${{ github.base_ref }}...HEAD -- schemas/); do
             if git show origin/${{ github.base_ref }}:"$file" > /tmp/base.json 2>/dev/null; then
-              result=$(schema check --src /tmp/base.json --tgt "$file" 2>&1 || true)
+              set +e
+              result=$(schema compat /tmp/base.json "$file" --protocol "$PROTOCOL" 2>&1)
+              status=$?
+              set -e
+
               echo "### $file" >> report.md
               echo '```' >> report.md
               echo "$result" >> report.md
               echo '```' >> report.md
               echo "" >> report.md
-              if echo "$result" | grep -q "breaking"; then
-                breaking=true
-              fi
+
+              case "$status" in
+                0) ;;
+                1) breaking=true ;;
+                *)
+                  echo "::error file=$file::schema compat could not read this pair"
+                  cat report.md >> $GITHUB_STEP_SUMMARY
+                  exit 2
+                  ;;
+              esac
             else
               echo "### $file (new)" >> report.md
               echo "New schema file." >> report.md
@@ -53,6 +79,15 @@ jobs:
 
           cat report.md >> $GITHUB_STEP_SUMMARY
           echo "breaking=$breaking" >> $GITHUB_OUTPUT
+
+      # A lexicon set is one schema, not a pile of them: references across
+      # documents resolve only when the set is compared as a bundle. To
+      # gate the project as a whole, check the directory out at both revs
+      # and hand `schema compat` the two directories instead of looping
+      # file by file:
+      #
+      #   git worktree add /tmp/base origin/${{ github.base_ref }}
+      #   schema compat /tmp/base/schemas schemas --protocol "$PROTOCOL"
 
       - name: Gate decision
         if: steps.check.outputs.breaking == 'true'

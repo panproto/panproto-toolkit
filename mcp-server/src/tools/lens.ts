@@ -9,7 +9,7 @@ export function lensTools(): ToolDefinition[] {
       name: "panproto_lens_generate",
       config: {
         title: TOOL_CATALOG.panproto_lens_generate.title,
-        description: "Auto-generate a bidirectional protolens chain between two schemas. Supports stringency tiers (strict/balanced/lenient/exploratory) controlling which of the 14 alignment strategies and sort coercions the search may use. Can return ranked candidates with per-step confidences. Optic kinds (Iso, Lens, Prism, Affine, Traversal) are classified from the underlying TheoryTransform.",
+        description: "Auto-generate a bidirectional protolens chain between two schemas. Supports stringency tiers (strict/balanced/lenient/exploratory) controlling which of the 14 alignment strategies and sort coercions the search may use; the tiers form a superset ladder except for wl_refinement and neighborhood, which can withdraw a pairing a lower tier made. Setting top_n above 1, or explain, reads the candidate list off the span search, so a lenient or exploratory tier answers on pairs where the source carries a sort the target lacks rather than reporting no morphism. Optic kinds (Iso, Lens, Prism, Affine, Traversal) are classified from the underlying TheoryTransform.",
         inputSchema: z.object({
           old_schema: z.string().describe("Path to old/source schema"),
           new_schema: z.string().describe("Path to new/target schema"),
@@ -75,9 +75,9 @@ export function lensTools(): ToolDefinition[] {
       name: "panproto_lens_verify",
       config: {
         title: TOOL_CATALOG.panproto_lens_verify.title,
-        description: "Verify lens round-trip laws (GetPut, PutGet, PutPut) on test data",
+        description: "Generate a lens between one or two schemas and report its step count and alignment quality. Both positional arguments are read as schema JSON. As of panproto 0.71.0 this command does not reach the concrete law checks: the CLI passes no data path to the verifier, so it prints \"No test data provided; skipping concrete law checks.\" and stops. To check the round-trip laws on real data, call check_laws through the Python or WASM binding, where GetPut is strict and PutGet is checked modulo derived coordinates. PutPut is never checked.",
         inputSchema: z.object({
-          data: z.string().describe("Path to test data file"),
+          data: z.string().describe("Path to the source schema file"),
           protocol: z.string().describe("Protocol name"),
           schema: z.string().optional().describe("Path to schema file"),
         }),

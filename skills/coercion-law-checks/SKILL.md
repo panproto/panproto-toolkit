@@ -76,15 +76,17 @@ Passing the gate is evidence, not proof. The checker only sees the samples in it
 
 ## Customizing the sample registry
 
-`CoercionSampleRegistry::with_defaults()` ships representative samples per `ValueKind`. For user-defined kinds, register samples in Rust:
+`CoercionSampleRegistry::with_defaults()` ships representative samples per `ValueKind`. For user-defined kinds, register samples in Rust. The method is `register`, and it replaces any samples already held for that kind:
 
 ```rust
 use panproto_lens::coercion_laws::{CoercionSampleRegistry, check_theory};
 
 let mut registry = CoercionSampleRegistry::with_defaults();
-registry.insert(my_value_kind, vec![sample_a, sample_b, sample_c]);
+registry.register(my_value_kind, vec![sample_a, sample_b, sample_c]);
 
 let report = check_theory(&theory, &registry);
+// check_theory_with_var(&theory, &registry, "y") when the equations bind
+// something other than the default `x`
 ```
 
 Or hook it into the DSL compile step:
@@ -100,7 +102,8 @@ The DSL-side call returns `TheoryDslError::CoercionLawViolation` on failure, so 
 For the auto-lens pipeline, pass the registry through `AutoLensConfig`:
 
 ```rust
-use panproto_lens::{AutoLensConfig, FilterOptions, UnknownSamplesPolicy};
+use panproto_lens::AutoLensConfig;
+use panproto_lens::auto_lens::{FilterOptions, UnknownSamplesPolicy};
 
 let config = AutoLensConfig {
     coercion_law_registry: Some(registry),

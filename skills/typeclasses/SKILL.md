@@ -64,13 +64,13 @@ The macro grammar is `Ident: SortExpr` where `SortExpr := Ident ('('
 Term,* ')')?` and `Term := Ident ('(' Term,* ')')?`. Bare identifiers
 keep compiling to `SortExpr::Name`; applied identifiers compile to
 `SortExpr::App` with `Term::Var` / `Term::App` arguments. All three
-macros — `class!`, `inductive!`, `derive_theory!` — route through the
+macros (`class!`, `inductive!`, `derive_theory!`) route through the
 `SortExpr::app` smart constructor, so simple-sort callers produce
 byte-identical output to the pre-0.44 macro.
 
 The same dependent-sort surface is reachable from Python via
 `panproto.TheoryBuilder` and `Theory.from_json` / `from_yaml` /
-`from_nickel` — see the sdk-python skill.
+`from_nickel`; see the sdk-python skill.
 
 ## Typical workflow
 
@@ -88,5 +88,6 @@ The same dependent-sort surface is reachable from Python via
 
 ## Further reading
 
-- `book/src/core/typeclasses.md`: the chapter introducing the surface.
-- `book/src/foundations/gats.md`: extended with the class-as-theory and instance-as-morphism correspondence.
+- `book/src/explanation/semantics/theory-dsl.md`: how a document body compiles to a `Theory`, a `TheoryMorphism`, or a `Protocol`.
+- `book/src/explanation/schemas-as-theories.md`: the class-as-theory and instance-as-morphism correspondence, at the level of what a protocol theory is.
+- `book/src/explanation/protocol-colimits.md`: composing theories by colimit, which is what a class commitment glues into.

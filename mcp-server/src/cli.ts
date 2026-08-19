@@ -8,6 +8,14 @@ const DEBUG = process.env.DEBUG?.includes("panproto") ?? false;
 interface ExecOptions {
   cwd?: string;
   timeout?: number;
+  /**
+   * Exit codes that carry a result rather than a failure.
+   *
+   * `schema compat` exits 1 when it finds a breaking change, which is the
+   * answer the caller asked for and not an error; without this the report on
+   * stdout would be discarded and replaced by the exit status.
+   */
+  okExitCodes?: number[];
 }
 
 export async function execCli(
@@ -36,6 +44,10 @@ export async function execCli(
     });
     return stdout.trim();
   } catch (error: unknown) {
+    const exitCode = (error as { code?: unknown }).code;
+    if (typeof exitCode === "number" && options.okExitCodes?.includes(exitCode)) {
+      return String((error as { stdout?: string }).stdout ?? "").trim();
+    }
     const message = extractErrorMessage(error);
     if (DEBUG) {
       console.error(`[panproto] error: ${message}`);

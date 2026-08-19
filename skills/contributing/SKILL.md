@@ -2,7 +2,8 @@
 name: contributing
 description: >
   Guide for contributing to panproto. Covers repository setup, building, testing,
-  the 27-crate architecture, PR workflow, and how to find good first issues.
+  the crate architecture, the four language bindings, PR workflow, and how to find
+  good first issues.
 ---
 
 # Contributing to panproto
@@ -32,25 +33,35 @@ cargo nextest run --workspace
 wasm-pack build crates/panproto-wasm --target web --dev
 
 # Build TypeScript SDK
-cd sdk/typescript && pnpm install && pnpm build
+cd bindings/typescript && pnpm install && pnpm build
 
 # Build Python SDK
-maturin develop --manifest-path crates/panproto-py/Cargo.toml
+cd bindings/python && maturin develop
 ```
+
+The four bindings live under `bindings/`: `typescript`, `python`, `haskell`,
+and `swift`. Each has its own bootstrap and its own CI job. Haskell and Swift
+consume `crates/panproto-c`, so they can only reach the C ABI; Python is a PyO3
+extension linking `panproto-core` directly and so reaches further.
 
 ## Architecture
 
-panproto has 24 crates organized in a dependency hierarchy:
+The workspace holds 36 `panproto-*` crates, organized in a dependency hierarchy:
 
 ```
-Level 0 (foundation):   panproto-gat
+Level 0 (foundation):   panproto-gat, panproto-gat-macros
 Level 1 (representation): panproto-expr, panproto-expr-parser, panproto-schema
-Level 2 (operations):    panproto-inst, panproto-mig, panproto-lens, panproto-lens-dsl, panproto-check
-Level 3 (application):   panproto-protocols, panproto-io, panproto-vcs, panproto-parse
-Level 4 (integration):   panproto-project, panproto-git, panproto-llvm, panproto-jit
-Level 5 (bindings):      panproto-core, panproto-wasm, panproto-py, panproto-cli
-Supporting:              panproto-grammars, panproto-xrpc, panproto-git-remote
+Level 2 (operations):    panproto-inst, panproto-mig, panproto-lens, panproto-check
+Level 3 (DSLs):          panproto-dsl-eval, panproto-lens-dsl, panproto-theory-dsl
+Level 4 (application):   panproto-protocols, panproto-io, panproto-vcs, panproto-parse
+Level 5 (integration):   panproto-project, panproto-git, panproto-git-remote, panproto-xrpc
+Level 6 (bindings):      panproto-core, panproto-wasm, panproto-c, panproto-py, panproto-cli
+Grammars:                panproto-grammars, plus ten per-group companion crates
 ```
+
+`panproto-c` is the C ABI the Haskell and Swift bindings link against; its
+`CONTRACT.md` is the signature reference, and three CI gates keep the header,
+the shims, and their tests in step with it.
 
 The key architectural principle: Level 0 (GAT engine) is the only hardcoded Rust. Everything above is data interpreted by the engine. Protocols are pairs of GATs. Schemas are models of schema theory GATs. Instances are models of schemas.
 
@@ -62,21 +73,28 @@ Before submitting a PR, run the full CI suite locally:
 # Formatting
 cargo fmt --all -- --check
 
-# Clippy (strict)
-RUSTFLAGS="-D warnings" cargo clippy --workspace --all-targets
+# Clippy (strict), plus the fuzz targets, which are their own workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo check --manifest-path fuzz/Cargo.toml
 
-# Tests
-cargo nextest run --workspace
+# Tests. The `ci` profile skips the two multi-minute full-corpus emit gates,
+# which run in the scheduled corpus-gate workflow (and locally by default).
+cargo nextest run --workspace --profile ci
+cargo test --doc --workspace
 
 # Documentation
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
+
+# Version consistency across every version-declaring file
+python3 .github/scripts/check_version_consistency.py --verbose
 ```
 
-All four must pass. The CI runs these exact commands.
+CI runs these exact commands, with `RUSTFLAGS: -D warnings` set for the whole
+workflow. The test job runs the matrix on both stable and the 1.85.0 MSRV.
 
 ## Internal developer skills
 
-Once you have the repo cloned, panproto includes 25 internal Claude Code skills in `.claude/skills/` and 4 agents in `.claude/agents/`. These are for working ON panproto:
+Once you have the repo cloned, panproto includes 27 internal Claude Code skills in `.claude/skills/` and 4 agents (`breaking-change`, `profile`, `review`, `wasm-audit`) in `.claude/agents/`. These are for working ON panproto:
 
 | Skill | Purpose |
 |-------|---------|
@@ -93,12 +111,22 @@ Once you have the repo cloned, panproto includes 25 internal Claude Code skills 
 | `/semver` | Check for breaking API changes |
 | `/coverage` | Generate coverage reports |
 | `/fuzz <target>` | Run fuzz tests |
+| `/deps` | Audit dependencies with cargo-deny |
+| `/hakari` | Manage the workspace-hack crate |
+| `/arch-doc` | Create or update architecture documentation |
+| `/ts-docs` | Generate TypeScript API documentation |
+| `/rustdoc` | Generate and review Rust documentation |
+| `/wasm-size` | Analyze WASM binary size |
+| `/ci` | Create or modify GitHub Actions workflows |
+| `/lean-transpile` | Transpile Rust to Lean 4 through the protolens pipeline |
 
 Reference skills (auto-invoked when editing relevant files):
 - `gat-theory` : GAT implementation mapping
 - `rust-conventions` : Rust patterns and conventions
 - `wasm-boundary` : WASM boundary patterns
 - `ts-sdk` : TypeScript SDK conventions
+- `panproto-book` : editorial conventions for `book/src/`
+- `asw-prose-style` : voice rules for long-form prose
 
 ## Finding good first issues
 
@@ -126,14 +154,17 @@ Look for issues labeled `good first issue` on GitHub. Common contribution areas:
 | `Cargo.toml` | Workspace configuration, shared dependencies |
 | `deny.toml` | Dependency audit rules |
 | `cliff.toml` | Changelog generation |
-| `grammars.toml` | Tree-sitter grammar registry |
+| `grammars.toml` | Tree-sitter grammar registry (261 grammars) |
+| `grammar-packs.toml` | Companion grammar wheel definitions |
+| `crates/panproto-c/CONTRACT.md` | C ABI signature reference (122 entry points) |
 | `.github/workflows/ci.yml` | CI pipeline definition |
+| `.github/scripts/check_version_consistency.py` | Version-field gate, with a `--self-test` flag |
 | `notes/THEORY.md` | Mathematical foundations |
 | `notes/ENGINEERING.md` | Engineering specifications |
 
 ## Further Reading
 
-- [Dev Guide Ch. 1: Welcome](https://panproto.dev/dev-guide/chapters/01-welcome.html)
-- [Dev Guide Ch. 2: First Contribution](https://panproto.dev/dev-guide/chapters/02-first-contribution.html)
-- [Dev Guide Ch. 3: Building & Testing](https://panproto.dev/dev-guide/chapters/03-building-testing.html)
-- [Dev Guide Ch. 5: Architecture Overview](https://panproto.dev/dev-guide/chapters/05-architecture-overview.html)
+- [Architecture](https://panproto.dev/book/explanation/architecture.html)
+- [Crate map](https://panproto.dev/book/reference/crate-map.html)
+- [What panproto verifies](https://panproto.dev/book/explanation/what-is-verified.html)
+- `book/CONTRIBUTING.md`: the editorial conventions every book page passes, including the per-chapter review ritual and the Rust-block compile gate.

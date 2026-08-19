@@ -3,7 +3,7 @@ name: closed-sorts-and-case
 description: >
   Closed sorts (SortClosure::Closed(ops)) and Term::Case: how the typechecker verifies
   coverage at sort declaration and branch consistency at term construction. Covers
-  the Stan-emitter-as-total-function example from the book.
+  the emitter-as-total-function pattern.
 ---
 
 # Closed Sorts and Case
@@ -24,9 +24,9 @@ You are helping a user work with closed sorts and pattern matching introduced in
 
 In the DSL, `SortSpec` has an optional `closed: Vec<String>` naming the operations that close the sort.
 
-## Motivating example: Stan as a total function
+## Motivating example: an emitter as a total function
 
-From the book chapter: the Stan emitter is authored as a case on a closed sort of Stan AST constructors. Because the sort is closed and every branch must match a constructor, emission is a total function. Adding a new Stan construct means adding a constructor to the closed sort, which forces every case expression over that sort (including the emitter) to update; the typechecker will not let you forget.
+Take an emitter for some target language, authored as a case on a closed sort of that language's AST constructors. Because the sort is closed and every branch must match a constructor, emission is a total function. Adding a construct to the language means adding a constructor to the closed sort, which forces every case expression over that sort (including the emitter) to update; the typechecker will not let you forget.
 
 This is the structural benefit of closed sorts: completeness failures are surfaced at the boundary where new constructors arrive, not as runtime crashes inside emitters.
 
@@ -46,5 +46,5 @@ This is the structural benefit of closed sorts: completeness failures are surfac
 
 ## Further reading
 
-- `book/src/core/dependent-sorts.md`: the extended chapter now covers closed sorts and the Stan emitter example.
-- `book/src/core/typeclasses.md`: class instances on closed sorts give total operation tables.
+- `book/src/explanation/semantics/theory-dsl.md`: `SortSpec::closed` and the inductive body that closes a sort against its constructors.
+- `panproto_gat::sort` on [docs.rs](https://docs.rs/panproto-gat/latest/panproto_gat/sort/index.html): `SortClosure` and the exhaustiveness check it drives.
