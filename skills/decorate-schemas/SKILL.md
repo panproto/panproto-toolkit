@@ -112,6 +112,6 @@ A vertex carries layout data if it has constraints with these sort names (the pr
 
 `panproto-gat` exposes the theory-level vocabulary the emitter targets, re-exported at the crate root:
 
-- `LayoutRole`: the structural role of a token — `BracketOpen`, `BracketClose`, `Separator`, `Keyword`, `Operator`, `Connector`, `Terminal`, plus `Immediate` for `IMMEDIATE_TOKEN` tokens. A role is a fact about the grammar (a `(` the grammar marks as a matched-pair open is `BracketOpen` whatever its character), assigned once during derivation.
-- `Adjacency` (`Tight` / `Space` / `Break`): the pure relation over role pairs. `Adjacency::between(prev, next)` decides spacing from roles alone, with no token-text inspection — the role-pair table the 0.51.0 emit rewrite replaced ad-hoc character checks with.
+- `LayoutRole`: the structural role of a token: `BracketOpen`, `BracketClose`, `Separator`, `Keyword`, `Operator`, `Connector`, `Terminal`, plus `Immediate` for `IMMEDIATE_TOKEN` tokens. A role is a fact about the grammar (a `(` the grammar marks as a matched-pair open is `BracketOpen` whatever its character), assigned once during derivation.
+- `Adjacency` (`Tight` / `Space` / `Break`): the pure relation over role pairs. `Adjacency::between(prev, next)` decides spacing from roles alone, with no token-text inspection. It is the role-pair table the 0.51.0 emit rewrite replaced ad-hoc character checks with.
 - `LayoutSpec` / `RuleLayout`: the grammar-derived payload of the `Layout` enrichment in its derived form (per-rule role assignment, indent markers, separator policy plus the `LayoutPolicy` knobs). The emitter is a model-interpreter over this spec rather than re-deriving roles per call.

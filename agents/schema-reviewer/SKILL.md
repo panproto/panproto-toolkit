@@ -4,7 +4,7 @@ description: >
   Reviews schema definitions for best practices, design quality, migration-friendliness,
   and protocol-specific conventions. Checks constraint coverage, naming patterns,
   graph structure, and recommends improvements.
-tools: Read, Grep, Glob, Bash(schema validate *), Bash(schema normalize *), Bash(schema scaffold *), Bash(schema check *), Bash(ls *), Bash(cat *)
+tools: Read, Grep, Glob, Bash(schema validate *), Bash(schema normalize *), Bash(schema scaffold *), Bash(schema verify *), Bash(schema compat *), Bash(ls *), Bash(cat *)
 model: opus
 ---
 
@@ -17,10 +17,20 @@ You review panproto schema definitions for quality, best practices, and migratio
 ### 1. Read and validate the schema
 
 ```bash
-schema validate --protocol <protocol> <schema_file>
+schema validate --protocol atproto <schema_file>
 ```
 
 Note any validation errors or warnings.
+
+Two limits on that command. It reads panproto's own serialized schema JSON, not a lexicon document or a project directory, and the CLI resolves exactly one protocol name, `atproto`. Reviewing a schema in any of the other fifty-three built-ins goes through an SDK: `panproto.get_builtin_protocol(name)` then `schema.validate(protocol)` in Python, or `p.validateSchema(schema, p.protocol(name))` in TypeScript. Both read the registry the CLI does not carry.
+
+Validation is structural. To also check that the schema satisfies its protocol theory's equations, which is the check that catches a schema whose shape is legal but whose meaning is not, run:
+
+```bash
+schema verify --protocol atproto <schema_file>
+```
+
+It bounds the search with `--max-assignments` (default 10000), so on a large schema a clean run is evidence up to that bound rather than a proof.
 
 ### 2. Structural analysis
 
@@ -102,5 +112,19 @@ When reviewing schemas that will be consumed by hand-written theories, migration
 When reviewing a schema whose enclosing theory contains directed equations with coercion class declarations (`Iso`, `Retraction`, `Projection`, `Opaque`):
 
 - Recommend running `schema theory check-coercion-laws theory.ncl --json` as part of the review. A dishonest `Iso` declaration will corrupt the asymmetric-lens put law downstream; the sample-based checker catches it cheaply.
-- For schemas where auto-lens generation is expected to emit coerce anchors (cross-kind migrations, Int/Float/Str conversions, `Lenient+` stringency runs), recommend enabling `AutoLensConfig.coercion_law_registry` so dishonest coerce anchors are filtered from the CSP scope rather than surfaced as migration candidates.
-- Naturality-aware span exclusion at `Lenient+` reduces spurious empty-candidate failures on sparse-overlap schema pairs. If previous review notes recommended adding hints to recover from an empty candidate set, re-run before recommending that workaround.
+- For schemas where auto-lens generation is expected to emit coerce anchors (cross-kind migrations, Int/Float/Str conversions, `Exploratory` stringency runs, which is the only tier where the coerce strategy fires), recommend enabling `AutoLensConfig.coercion_law_registry` so dishonest coerce anchors are filtered from the CSP scope rather than surfaced as migration candidates.
+
+## Notes on 0.71.0 behavior
+
+Three changes bear on what a review should recommend.
+
+**A partial answer is the normal answer.** The morphism search now returns a span: the sub-schema of the source induced on the vertices that found a target, with the two legs into source and target. It never refuses for want of a match. So "auto-generation failed on this pair" is no longer a reason to restructure a schema, and a review that recommended flattening or renaming to make a total morphism exist should be re-read. What is worth reviewing instead is *coverage*: which vertices the span drops, and whether each drop is a field the schema meant to lose.
+
+**Nothing is dropped ahead of the search.** Earlier releases pre-excluded source vertices a local scan judged infeasible, which could take a parent out along with an orphan child. Those scans are gone, so a `DropSort` in a generated chain now says the objective preferred the drop rather than that the vertex could not be mapped. Fields that used to disappear at a span tier survive.
+
+**A schema whose every vertex sits on a cycle has no entry point.** The span certificate records whether the apex is pointed, and the existence check reports every vertex of an unrooted apex at risk because none is reachable from a vertex with no incoming edge. Recommend at least one root, and `validate` now reports a recursion point whose marker dangles at either end rather than silently dropping it.
+
+Two review checks that follow from the merge path:
+
+- A vertex records its NSID twice, on the vertex and in the schema's `nsids` map, and a pushout now keeps the two in step. A schema hand-assembled with one set and not the other is a contradiction the content address will bake in; flag it.
+- Coercions are keyed by a pair of vertex kinds and policies by a constraint sort name, neither of which is a vertex id. A vertex whose id happens to spell a kind or a sort name is worth renaming, since it invites confusion in exactly the maps that are not vertex-keyed.

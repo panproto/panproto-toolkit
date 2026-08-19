@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.18.0] - 2026-08-19
+
+Catches the toolkit up across panproto v0.61.0 to v0.71.0. The headline is v0.71.0, which replaces the morphism search with exact optimisation over a cost function network and changes the contract of every entry point into it, so the migration and lens skills carried examples a reader could no longer run.
+
+### Fixed
+
+- **`skills/use-lenses`, `skills/build-migration`, `skills/lens-dsl`, `skills/protolenses`**: the search API moved under them. `find_morphisms` returns a `MorphismList` carrying a truncation flag rather than a `Vec`, and its 1024-result cap now bounds every request rather than only the unbounded one; `find_span` is the entry point to reach for, and it never refuses for want of a match; `discover_overlap` takes a `&Protocol` and returns a `Result`; `SearchOptions::initial` is now `hard_pins`, and `preferred`, `max_nodes`, `relax_edge_name_pruning` and `DomainConstraints::name_similarity_threshold` are gone; `AutoSpec::max_search_depth` is now `max_results`.
+- **`skills/use-lenses`**: the naturality-aware pre-exclusion described since 0.38.0 no longer exists. Three local feasibility scans populated `excluded_sources` before the search ran and were stricter than the search itself, so a root whose only outgoing edge had no target counterpart was dropped along with the orphan leaf. The objective decides alone now, and `auto_generate` keeps the better of the pinned and released searches on quality first with coverage as the tie-break.
+- **`mcp-server`**: `panproto_auto_migrate` documented an `alignmentStrategies` summary with `anchorCount` and `meanConfidence` that panproto has never emitted, and attributed the answer to the 14-strategy alignment ladder, which seeds lens generation rather than this command. It now describes the span, the apex coverage, the quality interval, and the `--total` / default / `--span` strictness ladder.
+- **`mcp-server`**: `panproto_lens_verify` promised round-trip law checks the CLI cannot reach. `schema lens verify` passes no data path to the verifier, so it prints "No test data provided; skipping concrete law checks" and stops; the tool now says so and points at the Python and WASM bindings, and its first argument is labelled the source schema rather than test data.
+- **`mcp-server`**: `panproto_classify` claimed a bare source tree is a valid operand. A protocol is required there, so a directory must be manifest-backed or hold documents in that protocol.
+- **`templates/rust-project`**: `auto_generate` takes four arguments and returns an `AutoLensResult`, where the template called it with two and used the value as a lens.
+
+### Added
+
+- **`skills/build-migration`, `skills/sdk-*`**: the span search across every surface. `find_span` returns `src <- apex -> tgt` with a `SpanCertificate` recording what was proved; it reached the C ABI as `pp_hom_find_span` and `pp_hom_span_to_overlap`, WASM and TypeScript as `auto_generate_span` and `Panproto.span`, and Swift as `findSpan(to:in:options:constraints:)`. The span wire carries `apex_digest` and `legs_are_functorial`, which together with the leg maps is a span's identity.
+- **`skills/sdk-haskell`**: `HomBackend` gained `findSpan` and `spanToOverlap` with no defaults and a `ProtocolBackend` superclass, so an out-of-tree instance stops compiling.
+- **`skills/sdk-python`**: `FoundMorphism.edge_map`, and `to_dict()` gaining a third key.
+- **`skills/schema-vcs`, `skills/breaking-change-ci`**: `schema compat` and `schema diff` accept project directories, and `schema integrate` resolves a protocol on every path.
+- **`skills/define-schema`, `skills/cross-protocol`**: `panproto_schema::induce` and `canonical_digest` are public API, and the four protocols restored in 0.61.0 (`json-schema`, `graphql`, `sql`, `protobuf`) are first-class endpoints again.
+
+### Changed (versions)
+
+- **Templates**: panproto v0.71.0 (TS `@panproto/core ^0.71.0`, Python `panproto>=0.71.0`, Rust `panproto-core 0.71.0`).
+- **MCP server**: own version `0.17.0` to `0.18.0`, in `package.json`, the `server.ts` literal and the lockfile, which had rotted at an older `@panproto/core`.
+
+### Known gaps
+
+- No `sdk-swift` skill, though panproto has shipped a Swift SDK since v0.70.0. `docs/skills-guide.md` records the gap and points at the book.
+- The Haskell binding is not on Hackage at any version, so `skills/sdk-haskell` builds from the repository.
+
 ## [0.17.0] - 2026-07-22
 
 Catches the toolkit up across panproto v0.56.0 → v0.60.0, and corrects two skills whose expression-language examples documented an API panproto does not have.

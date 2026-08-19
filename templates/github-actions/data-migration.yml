@@ -1,10 +1,16 @@
 # Dry-run data migration on schema changes to catch migration failures early.
 # Copy this file to .github/workflows/data-migration.yml in your project.
+#
+# Both steps read panproto's own serialized schema JSON on each side, and
+# `schema auto-migrate` resolves the protocol the old schema names.
 
 name: Data Migration Check
 on:
   pull_request:
     paths: ['schemas/**']
+
+env:
+  PROTOCOL: atproto
 
 jobs:
   migration-check:
@@ -25,11 +31,17 @@ jobs:
             if git show origin/${{ github.base_ref }}:"$file" > /tmp/base.json 2>/dev/null; then
               echo "::group::Migration check for $file"
 
-              # Try auto-generating a lens
-              if schema lens generate /tmp/base.json "$file" > /dev/null 2>&1; then
-                echo "Auto-generation succeeded for $file"
+              # `schema auto-migrate` runs the span search, which never
+              # refuses for want of a match: it reports how much of the old
+              # schema the new one covers, together with the interval the
+              # search proved the quality lies in. It exits non-zero only
+              # when the optimal apex is empty, i.e. when the two schemas
+              # share nothing at all. Add --total to require a morphism that
+              # covers every vertex of the old schema.
+              if schema auto-migrate /tmp/base.json "$file"; then
+                echo "A migration was found."
               else
-                echo "::warning file=$file::Auto-generation failed. Manual migration may be needed."
+                echo "::warning file=$file::The two schemas share nothing. Write the migration by hand."
               fi
 
               echo "::endgroup::"
@@ -37,10 +49,31 @@ jobs:
           done
 
       - name: Dry-run data migration
-        if: hashFiles('data/') != ''
+        if: hashFiles('data/**') != ''
         run: |
-          schema data migrate --dry-run data/ 2>&1 | tee migration-report.txt
-          if grep -q "ERROR" migration-report.txt; then
-            echo "::error::Data migration dry-run failed. See output above."
-            exit 1
-          fi
+          # `schema data convert` needs no repository: it auto-generates a
+          # lens between the two schemas and runs every record through it,
+          # writing the results to an output directory. A record the lens
+          # cannot carry is counted as skipped rather than aborting the run,
+          # so the skipped count is what a gate reads.
+          for file in $(git diff --name-only origin/${{ github.base_ref }}...HEAD -- schemas/); do
+            git show origin/${{ github.base_ref }}:"$file" > /tmp/base.json 2>/dev/null || continue
+
+            set +e
+            schema data convert data/ \
+              --from /tmp/base.json \
+              --to "$file" \
+              --protocol "$PROTOCOL" \
+              -o /tmp/migrated 2>&1 | tee migration-report.txt
+            status=${PIPESTATUS[0]}
+            set -e
+
+            if [ "$status" -ne 0 ]; then
+              echo "::error file=$file::schema data convert failed. See output above."
+              exit 1
+            fi
+            if grep -qE '[1-9][0-9]* skipped' migration-report.txt; then
+              echo "::error file=$file::Some records could not be migrated. See output above."
+              exit 1
+            fi
+          done

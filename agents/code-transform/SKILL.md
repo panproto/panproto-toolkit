@@ -5,7 +5,7 @@ description: >
   code. Combines the parse → protolens → emit pipeline for code refactoring, cross-language
   translation, and structural analysis tasks. Uses the parse/decorate/emit lens (v0.48.0+)
   for verified round-trip fidelity.
-tools: Read, Grep, Glob, Bash(schema parse file *), Bash(schema parse emit *), Bash(schema parse project *), Bash(schema diff *), Bash(schema lens generate *), Bash(schema lens apply *), Bash(schema lens inspect *), Bash(schema auto-migrate *), Bash(ls *), Bash(cat *)
+tools: Read, Grep, Glob, Bash(schema parse file *), Bash(schema parse emit *), Bash(schema parse project *), Bash(schema diff *), Bash(schema lens generate *), Bash(schema lens apply *), Bash(schema lens inspect *), Bash(schema lens verify *), Bash(schema auto-migrate *), Bash(ls *), Bash(cat *)
 model: sonnet
 ---
 
@@ -29,15 +29,15 @@ For multi-file projects:
 schema parse project ./src
 ```
 
-259 languages are supported via tree-sitter grammars. The parser auto-detects the language from file extension.
+261 languages are supported via tree-sitter grammars. The parser auto-detects the language from file extension.
 
 ### 2. Compute structural diff
 
 ```bash
-schema diff --src old_schema.json --tgt new_schema.json --detect-renames --optic-kind
+schema diff old_schema.json new_schema.json --detect-renames --optic-kind
 ```
 
-The `--optic-kind` flag classifies each change as Iso, Lens, Prism, Affine, or Traversal.
+Both operands are positional. The `--optic-kind` flag classifies each change as Iso, Lens, Prism, Affine, or Traversal.
 
 ### 3. Generate lens
 
@@ -46,6 +46,16 @@ schema lens generate old_schema.json new_schema.json --protocol <lang> --explain
 ```
 
 The 14-strategy alignment ladder discovers the best morphism. Use `--stringency` to control how aggressive the search is (strict, balanced, lenient, exploratory).
+
+`--protocol` names a protocol the CLI resolves, and the CLI resolves exactly one, `atproto`. A parsed source file's protocol is the language's auto-derived theory, which the CLI cannot name on this flag, so lens generation over parsed code goes through an SDK: `panproto.parse_source_file(path)` then `auto_generate_lens(src, tgt, protocol)` in Python, where the protocol comes from `theory_of` on the parsed schema. The parse and diff commands below need no protocol and work from the CLI directly.
+
+When the two files share only part of their structure, which is the ordinary case for two versions of a source file, ask the span search instead:
+
+```bash
+schema auto-migrate old_schema.json new_schema.json
+```
+
+It never refuses for want of a match. The apex is the sub-schema of the old file induced on the nodes the search gave a counterpart, and the coverage fraction is the honest measure of how much of the old file the transform reaches. Add `--total` to require every node to be covered, `--span` to accept an empty apex as the answer, and `--monic` to require the right leg to embed.
 
 ### 4. Inspect the lens chain
 
@@ -67,10 +77,12 @@ The parse/decorate/emit lens (v0.48.0+) guarantees structural equivalence modulo
 ### 6. Verify round-trip
 
 ```bash
-schema lens verify data.json --protocol <lang>
+schema lens verify old_schema.json new_schema.json --protocol <lang>
 ```
 
-Checks GetPut, PutGet, and PutPut laws on concrete data.
+Both operands are schemas: the command generates the lens between them and reports the step count and alignment quality. Concrete GetPut and PutGet checks run from an SDK rather than from the CLI, through `LensHandle.checkLaws(instance)` in TypeScript or `CompiledMigration.check_laws(...)` in Python.
+
+The CLI's own round-trip evidence for a source file is `schema parse emit`, which parses and emits back through the tree-sitter registry, so a diff of the output against the input shows whether the format survives.
 
 ## Output format
 

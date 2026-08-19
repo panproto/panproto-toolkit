@@ -1,25 +1,25 @@
 ---
 name: repl
 description: >
-  Quickstart for the panproto-repl binary (0.37.0+). Ghci-style interactive shell for
+  Quickstart for `schema theory repl` (0.42.0+). Ghci-style interactive shell for
   theories and terms: :load, :theories, :use, :sorts, :ops, :type, :normalize, :model,
   :instance, :quit.
 ---
 
 # REPL
 
-You are helping a user work with `panproto-repl`, the interactive shell introduced in panproto 0.37.0. It behaves like ghci or `cargo repl` for the theory layer: load a document, inspect the theories it defines, type and normalize terms under rewrites, and print a fragment of the free model.
+You are helping a user work with `schema theory repl`, the interactive shell introduced in panproto 0.37.0. It behaves like ghci for the theory layer: load a document, inspect the theories it defines, type and normalize terms under rewrites, and print a fragment of the free model.
 
 ## Installation
 
-As of panproto 0.42.0 the REPL is integrated into the `schema` CLI: invoke it as `schema theory repl`. The standalone `panproto-repl` binary was removed; the engine remains as a library (the `panproto-repl` crate) consumed by `panproto-cli`. `schema expr repl` (the expression-language REPL) uses the same rustyline driver, so syntax highlighting, persistent history, and tab-completion of `:command` names behave identically across the two surfaces.
+As of panproto 0.42.0 the REPL is integrated into the `schema` CLI: invoke it as `schema theory repl`. There is no standalone REPL binary and no separate `panproto-repl` crate; the engine lives in `panproto-cli`'s own `repl` module. `schema expr repl` (the expression-language REPL) uses the same rustyline driver, so syntax highlighting, persistent history, and tab-completion of `:command` names behave identically across the two surfaces.
 
 ```sh
-schema theory repl              # interactive theory-layer shell
-schema theory repl path.ncl     # preload a document
+schema theory repl                     # interactive theory-layer shell
+schema theory repl --load path.ncl     # preload a document
 ```
 
-If you're on a panproto release earlier than 0.42.0 and have the standalone binary on PATH, `panproto-repl` is the older entry point; the command set is identical.
+The preload is a flag, not a positional argument, and it repeats: pass `--load` once per document.
 
 ## Commands
 
@@ -34,7 +34,9 @@ If you're on a panproto release earlier than 0.42.0 and have the standalone bina
 | `:normalize <term>` | Normalize a term under the active theory's directed equations. |
 | `:model [depth]` | Print a fragment of the free model up to the given depth (default small). |
 | `:instance` | Print the compiled form of the last loaded instance body. |
-| `:quit` | Exit the REPL. |
+| `:quit` (or `:q`) | Exit the REPL. |
+
+Anything not starting with `:` is typechecked as a term against the active theory.
 
 ## Typical workflows
 
@@ -65,9 +67,10 @@ If you're on a panproto release earlier than 0.42.0 and have the standalone bina
 
 ## Relationship to the CLI
 
-The REPL is complementary to `panproto theory validate` and `panproto theory compile`. The CLI verbs do batch checking; the REPL does exploratory inspection. Use the REPL while authoring a theory, use the CLI verbs in CI.
+The REPL is complementary to `schema theory validate` and `schema theory compile`. The CLI verbs do batch checking; the REPL does exploratory inspection. Use the REPL while authoring a theory, use the CLI verbs in CI. (The binary is named `schema`, not `panproto`.)
 
 ## Further reading
 
-- `book/src/core/typeclasses.md`: classes and instances are convenient to explore in the REPL.
-- `book/src/foundations/rewriting.md`: normalization and confluence behave the way the REPL demonstrates.
+- `book/src/explanation/semantics/repl-commands.md`: what each command does, what session state it touches, and what the bare-term path means.
+- `book/src/explanation/semantics/theory-dsl.md`: the document surface `:load` accepts and how it compiles to a `Theory`.
+- `book/src/explanation/schemas-as-theories.md`: why the theory layer is separate from the schemas written under it.

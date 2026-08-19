@@ -28,21 +28,23 @@ export function vcsWriteTools(): ToolDefinition[] {
       name: "panproto_vcs_add",
       config: {
         title: TOOL_CATALOG.panproto_vcs_add.title,
-        description: "Stage a schema file for the next commit. Auto-migration compiles the migration from the previous HEAD schema.",
+        description: "Stage a schema for the next commit. Auto-migration derives the migration from the previous HEAD schema. The path may be a panproto JSON schema, a single source file parsed via tree-sitter, or a directory, which is staged as a per-file schema tree so an edit to one file leaves its siblings' object IDs untouched. Staging a data directory writes each JSON file to the index keyed by its source path, all or nothing across the directory. Staged data is stored as opaque bytes: it is not parsed or checked against the schema it is recorded under.",
         inputSchema: z.object({
-          schema: z.string().describe("Path to schema file to stage"),
+          schema: z.string().describe("Path to the schema file, source file, or project directory to stage"),
           repo_path: z.string().optional().describe("Path to panproto repository (default: cwd)"),
           dry_run: z.boolean().optional().describe("Preview staging without modifying index"),
           force: z.boolean().optional().describe("Force add even if validation fails"),
           data: z.string().optional().describe("Path to data directory to stage alongside the schema"),
+          skip_verify: z.boolean().optional().describe("Record the derived migration but skip GAT migration validation, leaving the stage pending. Use when replaying already-validated schema versions, where the per-add model check dominates."),
         }),
         annotations: TOOL_CATALOG.panproto_vcs_add.annotations,
       },
-      handler: withErrorBoundary(async ({ schema, repo_path, dry_run, force, data }) => {
+      handler: withErrorBoundary(async ({ schema, repo_path, dry_run, force, data, skip_verify }) => {
         const args = ["add"];
         if (dry_run) args.push("-n");
         if (force) args.push("-f");
         if (data) args.push("--data", data as string);
+        if (skip_verify) args.push("--skip-verify");
         args.push(schema as string);
         const result = await execCli(...args, { cwd: repo_path as string | undefined });
         return textContent(result);

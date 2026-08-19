@@ -5,11 +5,12 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "build": "tsc",
-    "schema:validate": "schema validate --protocol atproto schemas/",
-    "schema:check": "schema diff --src schemas/v1.json --tgt schemas/v2.json"
+    "schema:validate": "schema validate --protocol atproto schemas/post.json",
+    "schema:diff": "schema diff schemas/v1.json schemas/v2.json",
+    "schema:compat": "schema compat schemas/v1.json schemas/v2.json --protocol atproto"
   },
   "dependencies": {
-    "@panproto/core": "^0.60.0"
+    "@panproto/core": "^0.71.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

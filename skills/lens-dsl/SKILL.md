@@ -161,7 +161,7 @@ const lens = chain.instantiate(schema);       // -> LensHandle
 const { view, complement } = lens.get(record); // value transforms run here
 ```
 
-`compileLensDocument` now carries the compiled field transforms through the WASM boundary, so value-level and hoist/nest steps take effect on `get`/`put`. They do not appear in `chain.toJson()`; call `chain.fieldTransforms()` (returns `Record<string, unknown[]>` keyed by parent vertex) to list them. Nickel source is not accepted directly (its contract imports need a filesystem) — precompile Nickel to JSON on the host and pass that.
+`compileLensDocument` now carries the compiled field transforms through the WASM boundary, so value-level and hoist/nest steps take effect on `get`/`put`. They do not appear in `chain.toJson()`; call `chain.fieldTransforms()` (returns `Record<string, unknown[]>` keyed by parent vertex) to list them. Nickel source is not accepted directly, because its contract imports need a filesystem; precompile Nickel to JSON on the host and pass that.
 
 ## Expressions
 
@@ -200,6 +200,7 @@ When using the `auto` body variant, you can provide a `HintSpec` to guide morphi
   "target": "my.target",
   "auto": {
     "quality_threshold": 0.5,
+    "max_results": 4,
     "hints": {
       "anchors": { "post": "article", "post:body": "article:content" },
       "constraints": [
@@ -224,6 +225,7 @@ let L = import "panproto/lens.ncl" in
   target = "my.target",
   auto = {
     quality_threshold = 0.5,
+    max_results = 4,
     hints = {
       anchors = { post = "article", "post:body" = "article:content" },
       constraints = [
@@ -237,14 +239,25 @@ let L = import "panproto/lens.ncl" in
 } | L.Lens
 ```
 
+### The `auto` body's own keys
+
+| Key | Effect |
+|-----|--------|
+| `quality_threshold` | Minimum alignment quality to accept, in `[0, 1]` |
+| `enable_overlap` | Try overlap-based alignment when the direct morphism search fails |
+| `max_results` | How many optimal morphisms the search may return. Renamed from `max_search_depth` in 0.71.0: the field has always set `SearchOptions::max_results`, and the search is now an exact optimiser, so what it caps is the number of morphisms *attaining* the optimum rather than how far the search looks. Zero is read as one, since a document asking for no results is asking for no lens. The Nickel contract carries the new key under the same optionality |
+| `hints` | The `HintSpec` below |
+
 ### Constraint types
 
 | Type | Fields | Effect |
 |------|--------|--------|
 | `scope` | `under`, `targets` | Restrict search to vertices reachable from this parent pair |
-| `exclude_targets` | `vertices` | Remove target vertices from morphism candidates |
-| `exclude_sources` | `vertices` | Remove source vertices from morphism candidates |
-| `prefer` | `predicate`, `weight` | Adjust scoring: `same_edge_name`, `similar_name { threshold }`, `same_kind` |
+| `exclude_targets` | `vertices` | Remove target vertices from every source's domain |
+| `exclude_sources` | `vertices` | Force a source vertex out of the answer |
+| `prefer` | `predicate`, `weight` | Set the objective's component weights: `same_edge_name`, `similar_name { threshold }`, `same_kind`. Weights are normalized to sum to one, so only their ratios matter |
+
+Two of these read differently since 0.71.0. `exclude_sources` forces `x_v = ⊥` rather than removing the variable, which keeps the variable set a function of the source schema alone; since a total morphism must map every source vertex, a total-morphism search with any exclusion returns empty and the span search is what answers the request. And `similar_name`'s `threshold` is now only the weight the objective puts on its name component, never a cut: a candidate scoring below it is still searched, just scored lower. It used to also remove every target whose name scored below it, over full path-like identifiers rather than the local names a reader would compare, which threw away correct answers whenever two schemas agreed on a field and disagreed on the prefix leading to it. State a genuine restriction as a `scope` or an exclusion, which say what they mean.
 
 ### Anchor propagation
 

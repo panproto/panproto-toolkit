@@ -25,6 +25,8 @@ Each skill corresponds to specific chapters in the [panproto tutorial](https://p
 | sdk-rust | Ch. 4: Your First Migration (Rust examples) | Ch. 16: Conventions |
 | contributing | (all chapters as reference) | Ch. 1: Welcome, Ch. 2: First Contribution, Ch. 3: Building & Testing |
 
+The panproto book is Diataxis-organized (tutorials, how-to guides, reference, explanation) rather than numbered, and it carries one SDK reference page per binding: Rust, TypeScript, Python, Haskell, and Swift. `sdk-haskell` maps to the Haskell reference page; there is no `sdk-swift` skill yet, so read the Swift reference page directly.
+
 ## Suggested learning paths
 
 ### Application developer (TypeScript)
@@ -53,6 +55,6 @@ Each skill corresponds to specific chapters in the [panproto tutorial](https://p
 ### DevOps engineer
 1. `/panproto-getting-started` then Tutorial Ch. 1
 2. `/panproto-breaking-change-ci` then Tutorial Ch. 7
-3. `/panproto-ci-github-actions`
-4. `/panproto-ci-breaking-gate`
-5. `/panproto-ci-pre-commit`
+3. `/panproto-github-actions`
+4. `/panproto-breaking-change-gate`
+5. `/panproto-pre-commit-hooks`

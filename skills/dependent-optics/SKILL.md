@@ -24,12 +24,11 @@ Dependent optics extend protolenses with context-sensitive behavior: the optic k
 ```typescript
 import { PipelineBuilder } from "@panproto/core";
 
-// Add a "confidence" field with default 1.0 to every element
-// of the "words" array
-const pipeline = new PipelineBuilder()
-  .mapItems("words", (inner) =>
-    inner.addField("confidence", "number", 1.0)
-  )
+// Add a "confidence" field to every element of the "words" array.
+// `mapItems` takes a single inner step, not a builder callback, and
+// PipelineBuilder is constructed with the WASM module.
+const chain = new PipelineBuilder(wasm)
+  .mapItems("word", { step_type: "add_field", parent: "word", name: "confidence", kind: "number" })
   .build();
 ```
 
@@ -50,34 +49,46 @@ Static classification conservatively composes the inner optic kind with `Lens`. 
 `RenameEdgeName` renames a JSON property key (edge label) without changing the theory structure. It is a fiber-level natural isomorphism: the theory is unchanged, only the schema-level edge metadata is relabeled. Always classified as `Iso` (empty complement).
 
 ```typescript
-const pipeline = new PipelineBuilder()
-  .renameField("oldKey", "newKey")
+const chain = new PipelineBuilder(wasm)
+  .renameEdgeName("word", "word.text", "oldKey", "newKey")
   .build();
 ```
 
 ## Combinators (0.23.0+)
 
-Built from elementary protolens steps:
+Built from elementary protolens steps. The `PipelineBuilder` methods and the Rust `panproto_lens::protolens::combinators` functions take the same arguments:
 
 | Combinator | Description |
 |-----------|-------------|
-| `renameField(old, new)` | Rename a JSON property key |
+| `renameField(parent, old, new)` | Rename a field's vertex name and JSON property key |
 | `removeField(key)` | Drop a field (complement captures dropped data) |
-| `addField(key, kind, default)` | Add a field with a default value |
-| `hoistField(parent, child)` | Move a nested field up one level |
-| `nestField(field, wrapper)` | Wrap a field in a new object |
-| `mapItems(array, inner)` | Apply a transform to every element of an array |
-| `pipeline(steps)` | Compose multiple steps sequentially |
+| `addField(parent, name, kind)` | Add a field and the edge reaching it |
+| `hoistField(parent, intermediate, child)` | Collapse `parent → intermediate → child` into `parent → child` |
+| `nestField(parent, child, intermediate, kind, options?)` | Insert an intermediate vertex between a parent and a child |
+| `renameEdgeName(srcSort, tgtSort, old, new)` | Rename a JSON property key without touching the sorts |
+| `mapItems(focus, inner)` | Apply an inner step to every element of an array |
+| `step(raw)` | Append a raw elementary step |
+
+`build()` returns a `ProtolensChainHandle`; every method returns `this`, so the calls chain.
 
 ## CLI
 
+There is no `--pipeline` argument. Author the scoped transform as a lens document, compile it, and apply the resulting chain:
+
 ```bash
-# Apply a scoped transform via the CLI
-schema lens apply \
-  --src schema_v1.json \
-  --tgt schema_v2.json \
-  --protocol atproto \
-  --pipeline '[{"type": "scoped", "focus": "word", "inner": {"type": "add_sort", "name": "confidence", "kind": "number", "default": 1.0}}]'
+cat > scoped.yaml <<'EOF'
+id: demo.word.confidence.v1
+source: transcript.v1
+target: transcript.v2
+steps:
+  - scoped:
+      focus: word
+      inner:
+        - add_field: { name: confidence, kind: number, fallback: 1.0 }
+EOF
+
+schema lens compile scoped.yaml --body-vertex transcript:body --out chain.json
+schema lens apply chain.json record.json --protocol atproto --direction forward
 ```
 
 ## Rust API
@@ -88,11 +99,10 @@ use panproto_gat::TheoryTransform;
 let transform = TheoryTransform::ScopedTransform {
     focus: "word".into(),
     inner: Box::new(TheoryTransform::AddSortWithDefault {
-        sort: panproto_gat::Sort {
-            name: "confidence".into(),
-            params: vec![],
-            kind: panproto_gat::SortKind::Val(panproto_gat::ValueKind::Float),
-        },
+        sort: panproto_gat::Sort::with_kind(
+            "confidence",
+            panproto_gat::SortKind::Val(panproto_gat::ValueKind::Float),
+        ),
         vertex_kind: None,
         default_expr: panproto_expr::Expr::Lit(
             panproto_expr::Literal::Float(1.0),

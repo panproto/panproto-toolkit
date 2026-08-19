@@ -27,7 +27,7 @@ export async function createServer(): Promise<{
 
   const server = new McpServer({
     name: "panproto",
-    version: "0.17.0",
+    version: "0.18.0",
   });
 
   const allTools: ToolDefinition[] = [

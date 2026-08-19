@@ -47,5 +47,6 @@ Use the step limit as a safety net even for terminating systems; it is cheap ins
 
 ## Further reading
 
-- `book/src/foundations/rewriting.md`: the new chapter on directed equations, LPO, and Knuth-Bendix.
-- `book/src/core/dependent-sorts.md`: extended with examples that rely on definitional equality modulo rewrites.
+- `panproto_gat::rewriting` on [docs.rs](https://docs.rs/panproto-gat/latest/panproto_gat/rewriting/index.html): the module docs carry the critical-pair and LPO accounts and the examples that go with them.
+- `book/src/explanation/semantics/theory-dsl.md`: where directed equations sit in a theory document.
+- `book/src/explanation/semantics/repl-commands.md`: `:normalize` drives the same rewrite system interactively.

@@ -1,6 +1,14 @@
 # Validate panproto schemas on every push and PR.
 # Copy this file to .github/workflows/schema-check.yml in your project.
 # Customize the PROTOCOL and schema paths for your project.
+#
+# `schema validate` reads panproto's own serialized schema JSON, which is
+# what `Schema.to_json()` (Python), `schema.toJson()` (TypeScript) and
+# `serde_json::to_string(&schema)` (Rust) write. Point it at a lexicon
+# document or a project directory and it reports a parse failure.
+#
+# `--protocol` names the protocol the CLI resolves. It ships `atproto`;
+# the other 53 built-ins are reachable through the SDKs.
 
 name: Schema Check
 on:
@@ -10,7 +18,7 @@ on:
     paths: ['schemas/**']
 
 env:
-  PROTOCOL: atproto  # Change to your protocol
+  PROTOCOL: atproto
 
 jobs:
   validate:
