@@ -19,7 +19,15 @@
    - Python: `pip install panproto` (requires Python 3.13+)
    - Rust: add `panproto-core` to your `Cargo.toml`
    - Haskell: cabal package `panproto` (full parity as of v0.55.0); build `libpanproto_c` from source via `bindings/haskell/bootstrap/dev-link.sh`, then `cabal build`. See `/panproto-sdk-haskell`.
-   - Swift: SwiftPM package at `bindings/swift/` (added in v0.70.0; requires Swift 6.0, which on Apple platforms means Xcode 16). It is not on a registry yet. Stage the C library with `bootstrap/dev-link.sh` to build from source, or `bootstrap/fetch-bindist.sh` for a prebuilt one, then `swift build`. The toolkit has no Swift skill yet; read the Swift SDK reference in the panproto book.
+   - Swift: SwiftPM package `panproto` (added in v0.70.0; requires Swift 6.1, since the manifest declares `swift-tools-version: 6.1` and gates its parse, project, and git tiers behind package traits). Targets macOS 14 and iOS 17, and builds in Swift 6 language mode. SwiftPM looks for `Package.swift` at a repository's root and takes no subpath, so `bindings/swift/` of the panproto repository is not resolvable as a dependency; depend on the [`panproto-swift`](https://github.com/panproto/panproto-swift) mirror, whose `v0.71.0` tag pins the published `panproto_c.xcframework` for that release:
+
+     ```swift
+     .package(url: "https://github.com/panproto/panproto-swift.git", .upToNextMinor(from: "0.71.0"))
+     ```
+
+     The engine and every binding share one version, and panproto is pre-1.0, so a minor bump can move the C ABI under the package. `from:` admits everything below 1.0.0, which is wider than that; `.upToNextMinor` is the requirement to write until 1.0.
+
+     To build the package out of a panproto checkout instead, stage the C library first: `bindings/swift/bootstrap/dev-link.sh` builds `panproto-c` from the workspace and needs a Rust toolchain, `bootstrap/fetch-bindist.sh` downloads a prebuilt library for the host, and `bootstrap/fetch-bindist.sh --xcframework` gets the XCFramework iOS builds need. Then `swift build`. See `/panproto-sdk-swift`.
 
 ## Automated install
 

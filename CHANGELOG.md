@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.19.0] - 2026-08-19
+
+Adds the Swift SDK skill and a Swift project template. panproto has shipped a Swift SDK since v0.70.0, and `docs/skills-guide.md` has carried the missing skill as a known gap since; this closes it.
+
+### Added
+
+- **`skills/sdk-swift`**: a full reference for the SwiftPM package, at the depth of `sdk-rust` and `sdk-python`. Covers installation against the published XCFramework versus a dev-linked workspace checkout; the module layout, including the trait-gated `PanprotoParse`, `PanprotoProject` and `PanprotoGit` tiers and the 105-of-122 entry-point split; `PanprotoEngine` as an `actor` and what handle lifetime means for a caller, which no other SDK skill has an analogue for; `PanprotoStructural` as the offline value layer whose `Codable` conformances are the CBOR shapes; the span search, with `SchemaHandle.findSpan(to:in:options:constraints:)`, the eleven-key `SchemaSpan`, and `overlap()`; migrations, lenses and VCS with worked examples; the `PanprotoError` cases; and the limitations, including that the ABI's lens entry points take no protocol handle, so a schema built against a caller-defined protocol is aligned against a synthesised default.
+- **`templates/swift-project`**: `Package.swift`, `panproto.toml` and a starter source file, mirroring the TypeScript, Python and Rust templates. It depends on the `panproto/panproto-swift` mirror, since SwiftPM resolves a package URL by looking for a `Package.swift` at the repository root and the SDK lives at `bindings/swift`.
+- **`skills/getting-started`**: the Swift scaffolding path, so all four SDKs are reachable from `/getting-started`.
+
+### Changed
+
+- **`docs/skills-guide.md`**: the known-gap note about the missing Swift skill is replaced by the skill's index entry. `README.md`, `docs/installation.md` and `docs/tutorial-map.md` list Swift alongside the other SDKs.
+- **MCP server**: own version `0.18.0` to `0.19.0`, in `package.json`, the `server.ts` literal and the lockfile.
+
+### A note on the install caveat
+
+An earlier draft of the Swift skill said panproto v0.71.0's Swift package does not build from its own tag. That was wrong about who it affects, and the skill says the accurate thing: consumers resolve the `panproto-swift` mirror, which is published with its pin already rewritten and builds. The caveat is local to a workspace checkout of a tag with nothing staged, and `bootstrap/dev-link.sh` is the remedy. panproto has since changed the manifest so a workspace checkout no longer falls back to a released artifact at all.
+
 ## [0.18.0] - 2026-08-19
 
 Catches the toolkit up across panproto v0.61.0 to v0.71.0. The headline is v0.71.0, which replaces the morphism search with exact optimisation over a cost function network and changes the contract of every entry point into it, so the migration and lens skills carried examples a reader could no longer run.

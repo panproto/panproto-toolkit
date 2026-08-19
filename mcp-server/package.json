@@ -1,6 +1,6 @@
 {
   "name": "@panproto/mcp-server",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "description": "MCP server exposing panproto schema operations with tool annotations, approval gates, and audit logging",
   "license": "MIT",
   "type": "module",

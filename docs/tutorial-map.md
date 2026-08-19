@@ -25,7 +25,7 @@ Each skill corresponds to specific chapters in the [panproto tutorial](https://p
 | sdk-rust | Ch. 4: Your First Migration (Rust examples) | Ch. 16: Conventions |
 | contributing | (all chapters as reference) | Ch. 1: Welcome, Ch. 2: First Contribution, Ch. 3: Building & Testing |
 
-The panproto book is Diataxis-organized (tutorials, how-to guides, reference, explanation) rather than numbered, and it carries one SDK reference page per binding: Rust, TypeScript, Python, Haskell, and Swift. `sdk-haskell` maps to the Haskell reference page; there is no `sdk-swift` skill yet, so read the Swift reference page directly.
+The panproto book is Diataxis-organized (tutorials, how-to guides, reference, explanation) rather than numbered, and it carries one SDK reference page per binding: Rust, TypeScript, Python, Haskell, and Swift. `sdk-haskell` and `sdk-swift` map to the Haskell and Swift reference pages, which is where each binding's surface is specified rather than in a numbered tutorial chapter.
 
 ## Suggested learning paths
 
@@ -36,6 +36,15 @@ The panproto book is Diataxis-organized (tutorials, how-to guides, reference, ex
 4. `/panproto-use-lenses` then Tutorial Ch. 6
 5. `/panproto-breaking-change-ci` then Tutorial Ch. 7
 6. `/panproto-sdk-typescript` (reference)
+
+### Apple-platform developer (Swift)
+1. `/panproto-sdk-swift` for the products, the engine actor, the handles, and the builders
+2. `/panproto-define-schema atproto` then Tutorial Ch. 2, 3
+3. `/panproto-build-migration` then Tutorial Ch. 4, 5
+4. `/panproto-use-lenses` then Tutorial Ch. 6
+5. `/panproto-schema-vcs` then Tutorial Ch. 10
+
+Steps 2 through 5 are language-independent guidance whose listings are in the CLI, TypeScript, Python, and Rust; `/panproto-sdk-swift` is where the Swift spelling of each operation lives.
 
 ### Data engineer
 1. `/panproto-getting-started python` then Tutorial Ch. 1
